@@ -1,31 +1,32 @@
+import { useEffect, useState } from "react";
 import ProductCard from "./ProductCard";
 
 function ProductSection() {
+    const [products, setProducts] = useState([]);
+    const [loading, setLoading] = useState(true); /*shows laoding products inncase of delay*/
+    const [error, setError] = useState(""); /*displays unable to laod products when it fails*/
+    
+    /*useEffect tells reacts to run this code after the component is loaded*/
+    useEffect(() => {
+  fetch("http://127.0.0.1:8000/products")
+    .then((response) => {
+      if (!response.ok) {
+        throw new Error("Failed to fetch products");
+      }
 
-  const products = [
-    {
-      id: 1,
-      name: "Lakme Eyeconic Kajal",
-      category: "Eye Makeup",
-      price: 300,
-      icon: "👁️",
-    },
-    {
-      id: 2,
-      name: "Lakme Absolute Matte Lip Color",
-      category: "Lip Makeup",
-      price: 699,
-      icon: "💄",
-    },
-    {
-      id: 3,
-      name: "Lakme Face Powder",
-      category: "Face Makeup",
-      price: 499,
-      icon: "✨",
-    },
-  ];
-
+      return response.json(); /*convert the response body into usable javascript data*/
+    })
+    .then((data) => {
+      setProducts(data);
+    })
+    .catch((error) => {
+      setError(error.message);
+    })
+    .finally(() => {
+      setLoading(false);
+    });
+}, []);
+    
   return (
     <section
       id="products"

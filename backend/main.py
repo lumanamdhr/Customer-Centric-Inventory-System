@@ -1,4 +1,5 @@
 from fastapi import FastAPI, Depends, HTTPException #depends tell before running API, the other thing is needed first
+from fastapi.middleware.cors import CORSMiddleware
 from sqlalchemy import text #execute raw SQL text through sqlalchemy interface
 from sqlalchemy.orm import Session
 
@@ -7,6 +8,13 @@ from models import Product
 from schemas import ProductCreate, ProductResponse, ProductUpdate
 
 app = FastAPI()
+app.add_middleware(
+    CORSMiddleware,
+    allow_origins=["http://localhost:5173"], #allow react frontend to communicate with API
+    allow_credentials=True, #allows credentilas such as authentication inof when implement login
+    allow_methods=["*"], #allows the HTTP methods as GET POST PUT DELETE
+    allow_headers=["*"], #allows frontend to send HTTP headers
+)
 Base.metadata.create_all(bind=engine)
 
 @app.get("/")
