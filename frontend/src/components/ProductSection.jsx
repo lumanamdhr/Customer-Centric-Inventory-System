@@ -1,7 +1,7 @@
 import { useEffect, useState } from "react";
 import ProductCard from "./ProductCard";
 
-function ProductSection() {
+function ProductSection({ onAddToCart }) {
     const [products, setProducts] = useState([]);
     const [loading, setLoading] = useState(true); /*shows laoding products inncase of delay*/
     const [error, setError] = useState(""); /*displays unable to laod products when it fails*/
@@ -56,6 +56,7 @@ function ProductSection() {
             <ProductCard
               key={product.id}
               product={product}
+              onAddToCart={onAddToCart}
             />
           ))}
         </div>

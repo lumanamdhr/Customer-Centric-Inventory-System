@@ -1,5 +1,5 @@
-/*eye icon in password div remaining*/
 import { useState } from "react";
+import { Eye, EyeOff } from "lucide-react";
 
 function Login({ isOpen, onClose }) { /*isopen shows panels and when we click x it will close*/
   const [email, setEmail] = useState("");
@@ -32,6 +32,10 @@ function Login({ isOpen, onClose }) { /*isopen shows panels and when we click x 
       }
 
       console.log("Logged in customer:", data);
+
+      localStorage.setItem("access_token", data.access_token); /*stoes the JWT returned by FastAPI*/
+      localStorage.setItem("customer_id", data.customer_id);
+      localStorage.setItem("customer_name", data.name);
 
       setMessage("Login successful!");
 
@@ -125,7 +129,11 @@ function Login({ isOpen, onClose }) { /*isopen shows panels and when we click x 
                 className="absolute right-0 top-1/2 -translate-y-1/2 text-gray-500 hover:text-black"
                 aria-label={showPassword ? "Hide password" : "Show password"}
                 >
-                {showPassword ? "🙈" : "👁️"}
+                {showPassword ?(
+                    <EyeOff size={19} />
+                ) : (
+                    <Eye size={19} />
+                )}
                 </button>
             </div>
             </div>

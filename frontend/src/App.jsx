@@ -8,13 +8,27 @@ import { useState } from "react";
 import Login from "./components/Login";
 
 function App() {
+  const [cartCount, setCartCount] = useState(0);
   const [isLoginOpen, setIsLoginOpen] = useState(false);
+
+  const handleAddToCart = () => {
+    const token = localStorage.getItem("access_token"); /* checks if the browser currently have login token */
+
+    if (!token) {
+        setIsLoginOpen(true);
+        return;
+    }
+
+    setCartCount((currentCount) => currentCount + 1);
+  };
+
   return (
     <div className="min-h-screen bg-white text-gray-900">
       <Navbar 
-      onLoginClick={() => setIsLoginOpen(true)}/>
+      onLoginClick={() => setIsLoginOpen(true)}
+      cartCount={cartCount}/>
       <Hero />
-      <ProductSection />
+      <ProductSection onAddToCart={handleAddToCart} />
       <Features />
       <About />
       <Footer />

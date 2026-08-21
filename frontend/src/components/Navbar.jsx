@@ -1,4 +1,6 @@
-function Navbar({onLoginClick}) {
+import { ShoppingCart } from "lucide-react";
+
+function Navbar({onLoginClick, cartCount}) {
   return (
     <nav className="sticky top-0 z-50 border-b border-gray-100 bg-white/95 backdrop-blur">
       <div className="mx-auto flex max-w-7xl items-center justify-between px-6 py-5 lg:px-10">
@@ -35,6 +37,20 @@ function Navbar({onLoginClick}) {
           </a>
         </div>
 
+        <div className="flex items-center gap-6">
+    
+        {/* Cart */}
+        <button
+            className="relative p-2 text-gray-700 hover:text-black transition"
+            aria-label="Shopping cart"
+        >
+            <ShoppingCart size={22} strokeWidth={1.8} />
+
+            <span className="absolute -top-1 -right-1 bg-black text-white text-[10px] font-medium rounded-full w-4 h-4 flex items-center justify-center">
+                {cartCount}
+            </span>
+        </button>
+
         {/* Login */}
         <button
         onClick={onLoginClick}
@@ -48,7 +64,7 @@ function Navbar({onLoginClick}) {
           Login
         </a>*/}
         </button>
-        
+      </div> 
       </div>
     </nav>
   );
