@@ -27,3 +27,20 @@ class ProductResponse(BaseModel):
 
     class Config:
         from_attributes = True #without this pydantic may not know how to read the attributes from SQLAlchemy object
+
+class CustomerCreate(BaseModel):
+    name: str
+    email: str
+    password: str
+
+class CustomerResponse(BaseModel):
+    id: int
+    name: str
+    email: str
+
+    class Config:
+        from_attributes = True
+
+class CustomerLogin(BaseModel):
+    email: str
+    password: str

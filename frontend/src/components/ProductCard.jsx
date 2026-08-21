@@ -1,3 +1,4 @@
+/*images is not displayed yet*/
 function ProductCard({ product }) {
   return (
     <article className="group overflow-hidden rounded-2xl border border-gray-100 bg-white transition duration-300 hover:-translate-y-1 hover:shadow-xl">

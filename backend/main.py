@@ -4,8 +4,16 @@ from sqlalchemy import text #execute raw SQL text through sqlalchemy interface
 from sqlalchemy.orm import Session
 
 from database import engine, get_db ,Base #import engine and base we created in db.py
-from models import Product
-from schemas import ProductCreate, ProductResponse, ProductUpdate
+from models import Product,Customer
+from schemas import (
+    ProductCreate, 
+    ProductResponse, 
+    ProductUpdate,
+    CustomerCreate,
+    CustomerResponse,
+    CustomerLogin
+    )
+from security import hash_password, verify_password, create_access_token
 
 app = FastAPI()
 app.add_middleware(
@@ -15,7 +23,7 @@ app.add_middleware(
     allow_methods=["*"], #allows the HTTP methods as GET POST PUT DELETE
     allow_headers=["*"], #allows frontend to send HTTP headers
 )
-Base.metadata.create_all(bind=engine)
+Base.metadata.create_all(bind=engine) #scans all the models that inherit from base and creates their database if they don't exist
 
 @app.get("/")
 def root():
@@ -108,4 +116,80 @@ def delete_product(product_id: int, db: Session = Depends(get_db)):
 
     return {
         "message": "Product deleted successfully"
+    }
+
+#Customer
+@app.post("/customers", response_model=CustomerResponse) #accepts post request
+def create_customer(
+    customer: CustomerCreate, #FastAPI expects data matching
+    db: Session = Depends(get_db)
+):
+    existing_customer = (
+        db.query(Customer)
+        .filter(Customer.email == customer.email)
+        .first()
+    )
+
+    if existing_customer:
+        raise HTTPException(
+            status_code=400,
+            detail="Email already registered"
+        )
+
+    hashed_password = hash_password(customer.password)
+
+    new_customer = Customer(
+        name=customer.name,
+        email=customer.email,
+        password=hashed_password
+    )
+
+    db.add(new_customer)
+    db.commit()
+    db.refresh(new_customer)
+
+    return new_customer
+
+#login customer
+@app.post("/login")
+def login(
+    customer: CustomerLogin, #data from user
+    db: Session = Depends(get_db) #db session
+):
+    existing_customer = ( #find the customer
+        db.query(Customer)
+        .filter(Customer.email == customer.email)
+        .first()
+    )
+
+    if existing_customer is None:
+        raise HTTPException(
+            status_code=401, #401 means the request isn't authenticated with valid credentials
+            detail="Invalid email or password"
+        )
+
+    password_is_correct = verify_password(
+        customer.password, #usertyped password
+        existing_customer.password #hash stored in postgreSQL
+    )
+
+    if not password_is_correct:
+        raise HTTPException(
+            status_code=401,
+            detail="Invalid email or password"
+        )
+    
+    access_token = create_access_token(
+    data={
+        "sub": str(existing_customer.id) #sub stands for subject to identify who the token belongs to
+    }
+    )
+
+    return {
+        "message": "Login successful",
+        "access_token": access_token,
+        "token_type": "bearer",
+        "customer_id": existing_customer.id,
+        "name": existing_customer.name,
+        "email": existing_customer.email
     }

@@ -32,12 +32,13 @@ function Hero() {
               Explore Products
             </a>
 
-            <a
+            
+            {/*<a
               href="#login"
               className="rounded-full border border-gray-300 bg-white px-7 py-3 text-sm font-medium text-gray-900 transition hover:border-gray-900"
             >
               Login
-            </a>
+            </a>*/}
           </div>
         </div>
 

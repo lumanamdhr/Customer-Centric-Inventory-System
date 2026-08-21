@@ -11,3 +11,11 @@ class Product(Base):
     price = Column(Float, nullable=False)
     stock_quantity = Column(Integer, nullable=False, default=0)
     reorder_level = Column(Integer, nullable=False, default=10)
+
+class Customer(Base): #creates database model called customer
+    __tablename__ = "customers"
+
+    id = Column(Integer, primary_key=True, index=True)
+    name = Column(String(100), nullable=False)
+    email = Column(String(150), unique=True, nullable=False, index=True)
+    password = Column(String(255), nullable=False)

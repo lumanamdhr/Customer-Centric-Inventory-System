@@ -1,4 +1,4 @@
-function Navbar() {
+function Navbar({onLoginClick}) {
   return (
     <nav className="sticky top-0 z-50 border-b border-gray-100 bg-white/95 backdrop-blur">
       <div className="mx-auto flex max-w-7xl items-center justify-between px-6 py-5 lg:px-10">
@@ -36,12 +36,19 @@ function Navbar() {
         </div>
 
         {/* Login */}
-        <a
+        <button
+        onClick={onLoginClick}
+        className="rounded-full border border-gray-900 px-5 py-2 text-sm font-medium transition hover:bg-gray-900 hover:text-white"
+        >
+          Login
+        {/*<a
           href="#login"
           className="rounded-full border border-gray-900 px-5 py-2 text-sm font-medium transition hover:bg-gray-900 hover:text-white"
         >
           Login
-        </a>
+        </a>*/}
+        </button>
+        
       </div>
     </nav>
   );
