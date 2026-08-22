@@ -1,17 +1,17 @@
 import { ShoppingCart } from "lucide-react";
 
-function Navbar({onLoginClick, cartCount}) {
+function Navbar({onLoginClick, onCartClick, onHomeClick, cartCount}) {
   return (
     <nav className="sticky top-0 z-50 border-b border-gray-100 bg-white/95 backdrop-blur">
       <div className="mx-auto flex max-w-7xl items-center justify-between px-6 py-5 lg:px-10">
 
         {/* Logo */}
-        <a
-          href="#home"
-          className="text-2xl font-semibold tracking-[0.25em] text-gray-900"
+        <button
+          onClick={onHomeClick}
+          className="cursor-pointer text-2xl font-semibold tracking-[0.25em] text-gray-900"
         >
           LAKMÉ
-        </a>
+        </button>
 
         {/* Navigation */}
         <div className="hidden items-center gap-8 md:flex">
@@ -41,7 +41,8 @@ function Navbar({onLoginClick, cartCount}) {
     
         {/* Cart */}
         <button
-            className="relative p-2 text-gray-700 hover:text-black transition"
+            onClick={onCartClick}
+            className="relative  cursor-pointer p-2 text-gray-700 hover:text-black transition"
             aria-label="Shopping cart"
         >
             <ShoppingCart size={22} strokeWidth={1.8} />
@@ -54,7 +55,7 @@ function Navbar({onLoginClick, cartCount}) {
         {/* Login */}
         <button
         onClick={onLoginClick}
-        className="rounded-full border border-gray-900 px-5 py-2 text-sm font-medium transition hover:bg-gray-900 hover:text-white"
+        className="cursor-pointer rounded-full border border-gray-900 px-5 py-2 text-sm font-medium transition hover:bg-gray-900 hover:text-white"
         >
           Login
         {/*<a

@@ -66,7 +66,7 @@ function Login({ isOpen, onClose }) { /*isopen shows panels and when we click x 
           {/* Close button */}
           <button
             onClick={onClose}
-            className="absolute top-6 right-6 text-2xl text-gray-500 hover:text-black"
+            className=" cursor-pointer absolute top-6 right-6 text-2xl text-gray-500 hover:text-black"
           >
             ×
           </button>

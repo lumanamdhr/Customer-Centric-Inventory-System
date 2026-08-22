@@ -37,6 +37,7 @@ class CustomerResponse(BaseModel):
     id: int
     name: str
     email: str
+    role: str
 
     class Config:
         from_attributes = True
@@ -44,3 +45,30 @@ class CustomerResponse(BaseModel):
 class CustomerLogin(BaseModel):
     email: str
     password: str
+
+class CartItemCreate(BaseModel): #when user clicks add to cart the frontend need sto tell the backend of products added to cart
+    product_id: int
+    quantity: int = 1
+
+class CartItemResponse(BaseModel): #fastAPI send back info to frontend
+    id: int
+    product_id: int
+    quantity: int
+
+class CartItemDetailResponse(BaseModel): #customer friendly response
+    id: int
+    product_id: int
+    name: str #it comes from products table
+    category: str
+    price: float
+    quantity: int #comes from cart_items
+    subtotal: float #calculated by backend and not stored in db
+
+class CartResponse(BaseModel): #represents entire cart
+    id: int
+    customer_id: int
+    items: list[CartItemDetailResponse]
+    total: float
+
+class CartItemUpdate(BaseModel):
+    quantity: int
