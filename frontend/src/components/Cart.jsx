@@ -1,6 +1,6 @@
 import { useEffect, useState } from "react";
 
-function Cart({onCartUpdate}) {
+function Cart({onCartUpdate, onCheckoutClick}) {
   // Stores the cart received from our FastAPI backend
   const [cart, setCart] = useState(null);
 
@@ -258,6 +258,13 @@ return (
                       <p className="mt-1 font-medium text-gray-900">
                         Rs. {item.subtotal}
                       </p>
+
+                      <button
+                        onClick={onCheckoutClick}
+                        className="mt-6 w-full cursor-pointer rounded-full bg-gray-900 py-4 text-sm font-medium text-white transition hover:bg-gray-700"
+                      >
+                        Proceed to Checkout
+                      </button>
 
                     </div>
 

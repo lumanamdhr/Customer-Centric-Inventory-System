@@ -5,7 +5,7 @@ from sqlalchemy import text #execute raw SQL text through sqlalchemy interface
 from sqlalchemy.orm import Session
 
 from database import engine, get_db ,Base #import engine and base we created in db.py
-from models import Product,Customer, Cart, CartItem
+from models import Product,Customer, Cart, CartItem, Sale, SaleItem
 from schemas import (
     ProductCreate, 
     ProductResponse, 
@@ -16,7 +16,8 @@ from schemas import (
     CartItemCreate,
     CartItemResponse,
     CartResponse,
-    CartItemUpdate
+    CartItemUpdate,
+    CheckoutRequest
     )
 from security import (
     hash_password, 
@@ -477,4 +478,111 @@ def admin_test(
         "message": "Admin access granted",
         "name": current_user.name,
         "role": current_user.role
+    }
+
+@app.post("/checkout")
+def checkout(
+    checkout_data: CheckoutRequest,
+    current_user: Customer = Depends(get_current_user),
+    db: Session = Depends(get_db)
+):
+    # Find the customer's cart
+    cart = (
+        db.query(Cart)
+        .filter(Cart.customer_id == current_user.id)
+        .first()
+    )
+
+    if cart is None:
+        raise HTTPException(
+            status_code=404,
+            detail="Cart not found"
+        )
+
+    # Get all items inside the cart
+    cart_items = (
+        db.query(CartItem)
+        .filter(CartItem.cart_id == cart.id)
+        .all()
+    )
+
+    if not cart_items:
+        raise HTTPException(
+            status_code=400,
+            detail="Cart is empty"
+        )
+
+    total_amount = 0
+
+    # Check stock and calculate total
+    for item in cart_items:
+
+        product = (
+            db.query(Product)
+            .filter(Product.id == item.product_id)
+            .first()
+        )
+
+        if product is None:
+            raise HTTPException(
+                status_code=404,
+                detail=f"Product {item.product_id} not found"
+            )
+
+        if product.stock_quantity < item.quantity:
+            raise HTTPException(
+                status_code=400,
+                detail=f"Not enough stock for {product.name}"
+            )
+
+        total_amount += product.price * item.quantity
+
+    # Create the sale
+    new_sale = Sale(
+        customer_id=current_user.id,
+        total_amount=total_amount,
+        payment_method=checkout_data.payment_method,
+        status="completed"
+    )
+
+    db.add(new_sale)
+    db.flush() #send the pending insert to db so SQLAlchemy can obtain the ID without comminting full transaction
+
+    # Create sale items and reduce inventory
+    for item in cart_items:
+
+        product = (
+            db.query(Product)
+            .filter(Product.id == item.product_id)
+            .first()
+        )
+
+        subtotal = product.price * item.quantity
+
+        sale_item = SaleItem(
+            sale_id=new_sale.id,
+            product_id=product.id,
+            quantity=item.quantity,
+            price=product.price,
+            subtotal=subtotal
+        )
+
+        db.add(sale_item)
+
+        # Reduce inventory
+        product.stock_quantity -= item.quantity
+
+        # Remove item from cart
+        db.delete(item)
+
+    db.commit()
+    db.refresh(new_sale)
+
+    return {
+        "message": "Checkout successful",
+        "sale_id": new_sale.id,
+        "customer_id": new_sale.customer_id,
+        "total_amount": new_sale.total_amount,
+        "payment_method": new_sale.payment_method,
+        "status": new_sale.status
     }

@@ -9,6 +9,7 @@ import About from "./components/About";
 import Footer from "./components/Footer";
 import Login from "./components/Login";
 import Cart from "./components/Cart";
+import Checkout from "./components/Checkout";
 
 function App() {
   
@@ -144,9 +145,18 @@ return (
       {/* Show cart page */}
       {currentPage === "cart" && (
         <Cart 
-        onHomeClick={() => setCurrentPage("home")}
-         onCartUpdate={fetchCartCount}/>
+          onHomeClick={() => setCurrentPage("home")}
+          onCartUpdate={fetchCartCount}
+          onCheckoutClick={() => setCurrentPage("checkout")}
+          />
       )}
+
+      {currentPage === "checkout" && (
+      <Checkout
+        onHomeClick={() => setCurrentPage("home")}
+        onOrderComplete={() => setCartCount(0)} //shows cart count 0 after succeful checkout
+      />
+    )}
 
       {/* Login sliding panel */}
       <Login

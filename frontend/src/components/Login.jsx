@@ -13,22 +13,29 @@ function Login({ isOpen, onClose }) { /*isopen shows panels and when we click x 
     setMessage("");
 
     try {
+      const formData = new URLSearchParams(); //creates form data instead of JSON
+
+      formData.append("username", email); //puts the email insisde OAuth2 username field
+      formData.append("password", password); //puts the pw in pw field
+
       const response = await fetch("http://127.0.0.1:8000/login", {
         method: "POST",
         headers: {
-          "Content-Type": "application/json",
+          "Content-Type": "application/x-www-form-urlencoded", //tells FastAPI its sending form data
         },
-        body: JSON.stringify({
-          email: email,
-          password: password,
-        }),
+        body: formData,
       });
 
       const data = await response.json();
 
       if (!response.ok) {
+        if (Array.isArray(data.detail)) {
+        setMessage("Please enter a valid email and password.");
+      } else {
         setMessage(data.detail || "Login failed");
-        return;
+      }
+
+      return;
       }
 
       console.log("Logged in customer:", data);
@@ -38,6 +45,10 @@ function Login({ isOpen, onClose }) { /*isopen shows panels and when we click x 
       localStorage.setItem("customer_name", data.name);
 
       setMessage("Login successful!");
+
+        setTimeout(() => {
+      onClose();
+    }, 1000);
 
     } catch (error) {
       console.error("Login error:", error);

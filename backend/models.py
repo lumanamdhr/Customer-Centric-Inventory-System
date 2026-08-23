@@ -1,5 +1,6 @@
-from sqlalchemy import Column, Integer, String, Float, Text, ForeignKey
+from sqlalchemy import Column, Integer, String, Float, Text, ForeignKey, DateTime
 from database import Base
+from datetime import datetime
 
 class Product(Base):
     __tablename__ = "products"
@@ -57,3 +58,78 @@ class Customer(Base): #creates database model called customer
     nullable=False,
     default="customer"
 )
+
+class Sale(Base):
+    __tablename__ = "sales"
+
+    id = Column(
+        Integer,
+        primary_key=True,
+        index=True
+    )
+
+    customer_id = Column(
+        Integer,
+        ForeignKey("customers.id"),
+        nullable=False
+    )
+
+    total_amount = Column(
+        Float,
+        nullable=False
+    )
+
+    payment_method = Column(
+        String(50),
+        nullable=False,
+        default="cash"
+    )
+
+    status = Column(
+        String(50),
+        nullable=False,
+        default="completed"
+    )
+
+    created_at = Column( #automatically record sales when happens
+        DateTime,
+        nullable=False,
+        default=datetime.utcnow
+    )
+
+
+class SaleItem(Base):
+    __tablename__ = "sale_items"
+
+    id = Column(
+        Integer,
+        primary_key=True,
+        index=True
+    )
+
+    sale_id = Column(
+        Integer,
+        ForeignKey("sales.id"),
+        nullable=False
+    )
+
+    product_id = Column(
+        Integer,
+        ForeignKey("products.id"),
+        nullable=False
+    )
+
+    quantity = Column(
+        Integer,
+        nullable=False
+    )
+
+    price = Column(
+        Float,
+        nullable=False
+    )
+
+    subtotal = Column(
+        Float,
+        nullable=False
+    )

@@ -72,3 +72,6 @@ class CartResponse(BaseModel): #represents entire cart
 
 class CartItemUpdate(BaseModel):
     quantity: int
+
+class CheckoutRequest(BaseModel):
+    payment_method: str = "cash"
