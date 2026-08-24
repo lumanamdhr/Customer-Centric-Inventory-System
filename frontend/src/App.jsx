@@ -10,11 +10,12 @@ import Footer from "./components/Footer";
 import Login from "./components/Login";
 import Cart from "./components/Cart";
 import Checkout from "./components/Checkout";
+import DashboardLayout from "./components/dashboard/DashboardLayout";
 
 function App() {
   
   // Keeps track of which page the user is viewing
-  const [currentPage, setCurrentPage] = useState("home");
+  const [currentPage, setCurrentPage] = useState("home"); //useState() is a React Hook that must be called inside component function
 
   // Keeps track of the number shown on the cart icon
   const [cartCount, setCartCount] = useState(0);
@@ -114,6 +115,10 @@ useEffect(() => {
   fetchCartCount();
 }, []);
 
+const openDashboard = () => {
+  setCurrentPage("dashboard");
+};
+
 return (
     <div className="min-h-screen bg-white text-gray-900">
 
@@ -139,6 +144,14 @@ return (
           <About />
 
           <Footer />
+
+          
+          <button
+            onClick={openDashboard}
+            className="fixed bottom-6 right-6 cursor-pointer rounded-full bg-gray-900 px-5 py-3 text-sm font-medium text-white shadow-lg transition hover:bg-gray-700"
+          >
+            Dashboard
+          </button>
         </>
       )}
 
@@ -157,6 +170,10 @@ return (
         onOrderComplete={() => setCartCount(0)} //shows cart count 0 after succeful checkout
       />
     )}
+
+        {currentPage === "dashboard" && (
+        <DashboardLayout role="admin" />
+      )}
 
       {/* Login sliding panel */}
       <Login

@@ -75,3 +75,13 @@ class CartItemUpdate(BaseModel):
 
 class CheckoutRequest(BaseModel):
     payment_method: str = "cash"
+
+class SaleResponse(BaseModel):
+    id: int
+    customer_id: int
+    total_amount: float
+    payment_method: str
+    status: str
+
+    class Config:
+        from_attributes = True

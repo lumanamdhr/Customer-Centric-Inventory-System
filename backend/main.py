@@ -17,7 +17,8 @@ from schemas import (
     CartItemResponse,
     CartResponse,
     CartItemUpdate,
-    CheckoutRequest
+    CheckoutRequest,
+    SaleResponse
     )
 from security import (
     hash_password, 
@@ -586,3 +587,105 @@ def checkout(
         "payment_method": new_sale.payment_method,
         "status": new_sale.status
     }
+
+#Dashboards
+@app.get("/dashboard/inventory")
+def inventory_dashboard(
+    db: Session = Depends(get_db)
+):
+
+    total_products = db.query(Product).count()
+
+    total_stock = (
+        db.query(Product.stock_quantity)
+        .all()
+    )
+
+    total_stock_quantity = sum(
+        stock[0] for stock in total_stock
+    )
+
+    low_stock = (
+        db.query(Product)
+        .filter(
+            Product.stock_quantity > 0,
+            Product.stock_quantity <= Product.reorder_level
+        )
+        .count()
+    )
+
+    out_of_stock = (
+        db.query(Product)
+        .filter(
+            Product.stock_quantity == 0
+        )
+        .count()
+    )
+
+    return {
+        "total_products": total_products,
+        "total_stock": total_stock_quantity,
+        "low_stock": low_stock,
+        "out_of_stock": out_of_stock
+    }
+
+#Inventory details API
+@app.get("/dashboard/inventory/details")
+def inventory_details(
+    db: Session = Depends(get_db)
+):
+
+    products = db.query(Product).all() #seperating into categories
+
+    low_stock_products = [
+        product
+        for product in products
+        if product.stock_quantity > 0
+        and product.stock_quantity <= product.reorder_level
+    ]
+
+    out_of_stock_products = [
+        product
+        for product in products
+        if product.stock_quantity == 0
+    ]
+
+    inventory_value = sum(
+        product.price * product.stock_quantity
+        for product in products
+    )
+
+    return {
+        "inventory_value": inventory_value,
+
+        "low_stock_products": [
+            {
+                "id": product.id,
+                "name": product.name,
+                "stock_quantity": product.stock_quantity,
+                "reorder_level": product.reorder_level,
+            }
+            for product in low_stock_products
+        ],
+
+        "out_of_stock_products": [
+            {
+                "id": product.id,
+                "name": product.name,
+            }
+            for product in out_of_stock_products
+        ],
+    }
+
+@app.get("/sales", response_model=list[SaleResponse])
+def get_sales(
+    db: Session = Depends(get_db),
+    current_user: Customer = Depends(get_current_user)
+):
+    sales = (
+        db.query(Sale)
+        .order_by(Sale.created_at.desc())
+        .all()
+    )
+
+    return sales
