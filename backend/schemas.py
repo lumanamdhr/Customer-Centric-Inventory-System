@@ -85,3 +85,18 @@ class SaleResponse(BaseModel):
 
     class Config:
         from_attributes = True
+
+class CustomerDashboardResponse(BaseModel):
+    id: int
+    name: str
+    email: str
+    role: str
+    total_orders: int
+    total_spending: float
+
+class IntelligenceProductResponse(BaseModel):
+    id: int
+    name: str
+    stock_quantity: int
+    reorder_level: int
+    suggested_reorder_quantity: int

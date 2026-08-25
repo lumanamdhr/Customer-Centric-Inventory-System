@@ -1,7 +1,7 @@
 from fastapi import FastAPI, Depends, HTTPException #depends tell before running API, the other thing is needed first
 from fastapi.middleware.cors import CORSMiddleware
 from fastapi.security import OAuth2PasswordRequestForm
-from sqlalchemy import text #execute raw SQL text through sqlalchemy interface
+from sqlalchemy import text, func #execute raw SQL text through sqlalchemy interface
 from sqlalchemy.orm import Session
 
 from database import engine, get_db ,Base #import engine and base we created in db.py
@@ -18,7 +18,9 @@ from schemas import (
     CartResponse,
     CartItemUpdate,
     CheckoutRequest,
-    SaleResponse
+    SaleResponse,
+    CustomerDashboardResponse,
+    IntelligenceProductResponse
     )
 from security import (
     hash_password, 
@@ -689,3 +691,86 @@ def get_sales(
     )
 
     return sales
+
+@app.get(
+    "/customers/dashboard",
+    response_model=list[CustomerDashboardResponse]
+)
+def get_customer_dashboard(
+    db: Session = Depends(get_db),
+    current_user: Customer = Depends(get_current_user)
+):
+
+    customers = db.query(Customer).all()
+
+    result = []
+
+    for customer in customers:
+
+        total_orders = (
+            db.query(Sale)
+            .filter(
+                Sale.customer_id == customer.id,
+                Sale.status == "completed"
+            )
+            .count()
+        )
+
+        total_spending = (
+            db.query(func.coalesce(func.sum(Sale.total_amount), 0))
+            .filter(
+                Sale.customer_id == customer.id,
+                Sale.status == "completed"
+            )
+            .scalar()
+        )
+
+        result.append(
+            {
+                "id": customer.id,
+                "name": customer.name,
+                "email": customer.email,
+                "role": customer.role,
+                "total_orders": total_orders,
+                "total_spending": float(total_spending)
+            }
+        )
+
+    return result
+
+@app.get(
+    "/intelligence",
+    response_model=list[IntelligenceProductResponse]
+)
+def get_inventory_intelligence(
+    db: Session = Depends(get_db),
+    current_user: Customer = Depends(get_current_user)
+):
+
+    products = db.query(Product).all()
+
+    result = []
+
+    for product in products:
+
+        if product.stock_quantity <= product.reorder_level:
+
+            suggested_quantity = (
+                product.reorder_level * 2
+                - product.stock_quantity
+            )
+
+            result.append(
+                {
+                    "id": product.id,
+                    "name": product.name,
+                    "stock_quantity": product.stock_quantity,
+                    "reorder_level": product.reorder_level,
+                    "suggested_reorder_quantity": max(
+                        suggested_quantity,
+                        0
+                    )
+                }
+            )
+
+    return result

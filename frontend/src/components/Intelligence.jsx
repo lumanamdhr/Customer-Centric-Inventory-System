@@ -1,10 +1,92 @@
+//rule based intelligence feature for now
+import { useEffect, useState } from "react";
+
 function Intelligence() {
+
+  const [products, setProducts] = useState([]);
+  const [loading, setLoading] = useState(true);
+  const [message, setMessage] = useState("");
+
+  const fetchIntelligence = async () => {
+
+    try {
+
+      const token = localStorage.getItem("access_token");
+
+      if (!token) {
+        setMessage("Please login to view intelligence.");
+        setLoading(false);
+        return;
+      }
+
+      const response = await fetch(
+        "http://127.0.0.1:8000/intelligence",
+        {
+          headers: {
+            Authorization: `Bearer ${token}`,
+          },
+        }
+      );
+
+      const data = await response.json();
+
+      if (!response.ok) {
+        setMessage(data.detail || "Unable to load intelligence.");
+        return;
+      }
+
+      setProducts(data);
+
+    } catch (error) {
+
+      console.error("Intelligence error:", error);
+      setMessage("Unable to connect to server.");
+
+    } finally {
+
+      setLoading(false);
+
+    }
+  };
+
+  useEffect(() => {
+    fetchIntelligence();
+  }, []);
+
+  const productsNeedingAttention = products.length;
+
+  const totalSuggestedReorder = products.reduce(
+    (total, product) =>
+      total + product.suggested_reorder_quantity,
+    0
+  );
+
+  if (loading) {
+    return (
+      <div className="p-8">
+        <p className="text-gray-500">
+          Loading intelligence data...
+        </p>
+      </div>
+    );
+  }
+
+  if (message) {
+    return (
+      <div className="p-8">
+        <p className="text-red-500">
+          {message}
+        </p>
+      </div>
+    );
+  }
+
   return (
-    <div className="min-h-screen bg-gray-50 px-8 py-10">
+    <div className="p-8">
 
-      <div className="mx-auto max-w-7xl">
+      <div className="mb-8">
 
-        <p className="text-sm tracking-[0.25em] text-gray-500">
+       <p className="text-sm tracking-[0.25em] text-gray-500">
           INTELLIGENCE
         </p>
 
@@ -16,58 +98,94 @@ function Intelligence() {
           Use historical business data to support better decisions.
         </p>
 
-        <div className="mt-8 grid gap-6 md:grid-cols-2 lg:grid-cols-3">
+      </div>
 
-          <div className="rounded-2xl border border-gray-200 bg-white p-6">
+      <div className="grid grid-cols-1 gap-6 md:grid-cols-2">
 
-            <p className="text-sm text-gray-500">
-              Demand Forecast
-            </p>
+        <div className="rounded-2xl border border-gray-200 bg-white p-6">
 
-            <h2 className="mt-3 text-xl font-semibold">
-              Coming soon
-            </h2>
+          <p className="text-sm text-gray-500">
+            Products Needing Attention
+          </p>
 
-            <p className="mt-2 text-sm text-gray-500">
-              Estimate future product demand using historical sales.
-            </p>
-
-          </div>
-
-          <div className="rounded-2xl border border-gray-200 bg-white p-6">
-
-            <p className="text-sm text-gray-500">
-              Reorder Recommendation
-            </p>
-
-            <h2 className="mt-3 text-xl font-semibold">
-              Coming soon
-            </h2>
-
-            <p className="mt-2 text-sm text-gray-500">
-              Recommend products and quantities that may need
-              replenishment.
-            </p>
-
-          </div>
-
-          <div className="rounded-2xl border border-gray-200 bg-white p-6">
-
-            <p className="text-sm text-gray-500">
-              Profit / Loss
-            </p>
-
-            <h2 className="mt-3 text-xl font-semibold">
-              Coming soon
-            </h2>
-
-            <p className="mt-2 text-sm text-gray-500">
-              Analyze revenue and estimated profit performance.
-            </p>
-
-          </div>
+          <p className="mt-2 text-3xl font-semibold">
+            {productsNeedingAttention}
+          </p>
 
         </div>
+
+        <div className="rounded-2xl border border-gray-200 bg-white p-6">
+
+          <p className="text-sm text-gray-500">
+            Suggested Reorder Units
+          </p>
+
+          <p className="mt-2 text-3xl font-semibold">
+            {totalSuggestedReorder}
+          </p>
+
+        </div>
+
+      </div>
+
+      <div className="mt-8 rounded-2xl border border-gray-200 bg-white p-6">
+
+        <h3 className="mb-6 text-lg font-semibold">
+          Reorder Recommendations
+        </h3>
+
+        {products.length === 0 ? (
+
+          <p className="text-sm text-gray-500">
+            No products currently require restocking.
+          </p>
+
+        ) : (
+
+          <div className="space-y-4">
+
+            {products.map((product) => (
+
+              <div
+                key={product.id}
+                className="flex items-center justify-between border-b border-gray-100 pb-4 last:border-0"
+              >
+
+                <div>
+
+                  <p className="font-medium text-gray-900">
+                    {product.name}
+                  </p>
+
+                  <p className="mt-1 text-sm text-gray-500">
+                    Current stock: {product.stock_quantity}
+                  </p>
+
+                  <p className="text-sm text-gray-500">
+                    Reorder level: {product.reorder_level}
+                  </p>
+
+                </div>
+
+                <div className="text-right">
+
+                  <p className="font-medium text-gray-900">
+                    Reorder {product.suggested_reorder_quantity}
+                  </p>
+
+                  <p className="text-xs text-gray-500">
+                    units suggested
+                  </p>
+
+                </div>
+
+              </div>
+
+            ))}
+
+          </div>
+
+        )}
 
       </div>
 
