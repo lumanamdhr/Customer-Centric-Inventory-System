@@ -17,11 +17,19 @@ function App() {
   // Keeps track of which page the user is viewing
   const [currentPage, setCurrentPage] = useState("home"); //useState() is a React Hook that must be called inside component function
 
+  const [userRole, setUserRole] = useState(
+  localStorage.getItem("customer_role")
+  );
+
   // Keeps track of the number shown on the cart icon
   const [cartCount, setCartCount] = useState(0);
 
   // Controls whether the login panel is open
-  const [isLoginOpen, setIsLoginOpen] = useState(false);
+  const [isLoginOpen, setIsLoginOpen] = useState(false); 
+
+  const [isLoggedIn, setIsLoggedIn] = useState(
+  !!localStorage.getItem("access_token") //!!token=ture if !!null=false
+);
 
  // Handles Add to Cart
   const handleAddToCart = async (product) => { //tells which product the customer clicked
@@ -115,8 +123,28 @@ useEffect(() => {
   fetchCartCount();
 }, []);
 
-const openDashboard = () => {
+/*const openDashboard = () => {
   setCurrentPage("dashboard");
+};*/
+
+//provides the respective page 
+const handleLoginSuccess = (role) => {
+  setUserRole(role);
+  setIsLoggedIn(true);
+  if (role === "admin" || role === "employee") {
+    setCurrentPage("dashboard");
+  } else {
+    setCurrentPage("home");
+  }
+};
+
+//logout
+const handleLogout = () => {
+
+  setIsLoggedIn(false);
+  setUserRole(null);
+  setCartCount(0);
+  setCurrentPage("home");
 };
 
 return (
@@ -128,6 +156,8 @@ return (
         onCartClick={() => setCurrentPage("cart")}
         onHomeClick={() => setCurrentPage("home")}
         cartCount={cartCount}
+        isLoggedIn={isLoggedIn}
+        onLogout={handleLogout}
       />
 
       {/* Show homepage */}
@@ -146,12 +176,12 @@ return (
           <Footer />
 
           
-          <button
+         {/*<button
             onClick={openDashboard}
             className="fixed bottom-6 right-6 cursor-pointer rounded-full bg-gray-900 px-5 py-3 text-sm font-medium text-white shadow-lg transition hover:bg-gray-700"
           >
             Dashboard
-          </button>
+          </button>*/}
         </>
       )}
 
@@ -171,15 +201,16 @@ return (
       />
     )}
 
-        {currentPage === "dashboard" && (
-        <DashboardLayout role="admin" />
+       {currentPage === "dashboard" && (
+        <DashboardLayout role={userRole} />
       )}
 
       {/* Login sliding panel */}
       <Login
         isOpen={isLoginOpen}
         onClose={() => setIsLoginOpen(false)}
-      />
+        onLoginSuccess={handleLoginSuccess} //login component can communicate the role to App
+      /> 
 
     </div>
   );

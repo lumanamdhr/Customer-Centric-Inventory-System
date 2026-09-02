@@ -459,7 +459,7 @@ def employee_test(
         "role": current_user.role
     }
 
-@app.get("/manager-test")
+"""@app.get("/manager-test")
 def manager_test(
     current_user: Customer = Depends(
         require_role("manager")
@@ -469,7 +469,7 @@ def manager_test(
         "message": "Manager access granted",
         "name": current_user.name,
         "role": current_user.role
-    }
+    }"""
 
 @app.get("/admin-test")
 def admin_test(

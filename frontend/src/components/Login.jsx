@@ -1,7 +1,7 @@
 import { useState } from "react";
 import { Eye, EyeOff } from "lucide-react";
 
-function Login({ isOpen, onClose }) { /*isopen shows panels and when we click x it will close*/
+function Login({ isOpen, onClose, onLoginSuccess }) { /*isopen shows panels and when we click x it will close*/
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
   const [showPassword, setShowPassword] = useState(false)
@@ -43,8 +43,16 @@ function Login({ isOpen, onClose }) { /*isopen shows panels and when we click x 
       localStorage.setItem("access_token", data.access_token); /*stoes the JWT returned by FastAPI*/
       localStorage.setItem("customer_id", data.customer_id);
       localStorage.setItem("customer_name", data.name);
+      localStorage.setItem("customer_email", data.email);
+      localStorage.setItem("customer_role", data.role); //store the role in vbrowser
+
+      console.log("Logged in customer:", data);
 
       setMessage("Login successful!");
+
+      if (onLoginSuccess) {
+        onLoginSuccess(data.role); //send the role back up to App.jsx
+      }
 
         setTimeout(() => {
       onClose();
