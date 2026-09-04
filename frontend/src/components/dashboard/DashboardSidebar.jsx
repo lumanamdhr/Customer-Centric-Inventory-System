@@ -1,42 +1,116 @@
-function DashboardSidebar({ role, activeSection, onSectionChange }) {
+import {
+  LayoutDashboard,
+  Package,
+  ShoppingCart,
+  Users,
+  Brain,
+} from "lucide-react";
+
+function DashboardSidebar({
+  role,
+  activeSection,
+  onSectionChange,
+}) {
   const menuItems = [
-    "Overview",
-    "Inventory",
-    "Sales",
-    "Customers",
-    "Intelligence",
+    {
+      name: "Overview",
+      icon: LayoutDashboard,
+    },
+    {
+      name: "Inventory",
+      icon: Package,
+    },
+    {
+      name: "Sales",
+      icon: ShoppingCart,
+    },
+    {
+      name: "Customers",
+      icon: Users,
+    },
+    {
+      name: "Intelligence",
+      icon: Brain,
+    },
   ];
 
   return (
-    <aside className="w-64 border-r border-gray-200 bg-white min-h-screen p-6">
+    <aside className="hidden min-h-screen w-64 shrink-0 bg-slate-800 text-white lg:block">
 
-      <div className="mb-10">
-        <h1 className="text-xl font-semibold tracking-[0.2em]">
-          LAKMÉ
-        </h1>
+      {/* Brand */}
+      <div className="border-b border-white/10 px-6 py-7">
 
-        <p className="mt-2 text-sm text-gray-500 capitalize">
-          {role} Dashboard
-        </p>
+        <button
+          onClick={() => onSectionChange("Overview")}
+          className="cursor-pointer text-left"
+        >
+          <h1 className="text-xl font-semibold tracking-[0.22em]">
+            LAKMÉ
+          </h1>
+
+          <p className="mt-2 text-[10px] font-medium uppercase tracking-[0.2em] text-slate-300">
+            Business Intelligence
+          </p>
+        </button>
+
       </div>
 
-      <nav className="space-y-2">
 
-        {menuItems.map((item) => ( //takes every item from array and create a button for it
-          <button
-            key={item}
-            onClick={() => onSectionChange(item)}
-            className={`w-full rounded-xl px-4 py-3 text-left text-sm transition ${
-              activeSection === item
-                ? "bg-gray-900 text-white"
-                : "text-gray-600 hover:bg-gray-100"
-            }`}
-          >
-            {item}
-          </button>
-        ))}
+      {/* Navigation */}
+      <nav className="space-y-2 px-4 py-6">
+
+        {menuItems.map((item) => {
+          const Icon = item.icon;
+
+          const isActive =
+            activeSection === item.name;
+
+          return (
+            <button
+              key={item.name}
+              onClick={() =>
+                onSectionChange(item.name)
+              }
+              className={`group flex w-full cursor-pointer items-center gap-3 rounded-xl px-4 py-3 text-left text-sm font-medium transition-all duration-200 ${
+                isActive
+                  ? "bg-teal-600 text-white shadow-lg shadow-teal-950/15"
+                  : "text-slate-300 hover:bg-white/10 hover:text-white"
+              }`}
+            >
+
+              <Icon
+                size={18}
+                strokeWidth={1.8}
+                className={
+                  isActive
+                    ? "text-white"
+                    : "text-slate-400 transition group-hover:text-white"
+                }
+              />
+
+              <span>
+                {item.name}
+              </span>
+
+            </button>
+          );
+        })}
 
       </nav>
+
+
+      {/* Role information */}
+      <div className="absolute bottom-0 w-64 border-t border-white/10 bg-slate-900/60 px-6 py-5">
+
+        <p className="text-[10px] uppercase tracking-[0.18em] text-slate-400">
+          Signed in as
+        </p>
+
+        <p className="mt-1 text-sm font-medium capitalize text-white">
+          {role}
+        </p>
+
+      </div>
 
     </aside>
   );

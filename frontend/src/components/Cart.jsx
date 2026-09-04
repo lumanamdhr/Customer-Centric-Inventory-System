@@ -201,7 +201,20 @@ return (
                     key={item.id}
                     className="flex items-center justify-between border-b border-gray-100 pb-8"
                   >
-
+                    
+                    <div className="h-24 w-24 shrink-0 overflow-hidden rounded-xl bg-stone-50">
+                      {item.image ? (
+                        <img
+                          src={`http://127.0.0.1:8000${item.image}`}
+                          alt={item.name}
+                          className="h-full w-full object-contain p-2"
+                        />
+                      ) : (
+                        <div className="flex h-full w-full items-center justify-center text-xs text-gray-400">
+                          No Image
+                        </div>
+                      )}
+                    </div>
                     {/* Product */}
 
                     <div className="w-1/3">

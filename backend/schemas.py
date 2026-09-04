@@ -56,7 +56,8 @@ class CartItemResponse(BaseModel): #fastAPI send back info to frontend
     id: int
     product_id: int
     quantity: int
-
+    
+    
 class CartItemDetailResponse(BaseModel): #customer friendly response
     id: int
     product_id: int
@@ -65,6 +66,7 @@ class CartItemDetailResponse(BaseModel): #customer friendly response
     price: float
     quantity: int #comes from cart_items
     subtotal: float #calculated by backend and not stored in db
+    image: str | None = None
 
 class CartResponse(BaseModel): #represents entire cart
     id: int

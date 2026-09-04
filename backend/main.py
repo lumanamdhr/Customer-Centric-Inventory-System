@@ -186,7 +186,8 @@ def get_cart(
                 "category": product.category,
                 "price": product.price,
                 "quantity": cart_item.quantity,
-                "subtotal": subtotal
+                "subtotal": subtotal,
+                "image": product.image
             })
 
     return { #backend gives react the entire cart

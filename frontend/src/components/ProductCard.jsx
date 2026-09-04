@@ -74,7 +74,7 @@ function ProductCard({
           <button
             onClick={() => onAddToCart(product)}
             disabled={product.stock_quantity === 0}
-            className="inline-flex cursor-pointer items-center justify-center gap-2 rounded-full bg-rose-500 px-4 py-3 text-xs font-semibold text-white transition-all duration-300 hover:bg-rose-600 hover:shadow-lg disabled:cursor-not-allowed disabled:bg-gray-300"
+            className="inline-flex cursor-pointer items-center justify-center gap-2 rounded-full bg-rose-500 px-3 py-2 text-xs font-semibold text-white transition-all duration-300 hover:bg-rose-600 hover:shadow-lg disabled:cursor-not-allowed disabled:bg-gray-300"
           >
             <ShoppingBag size={15} />
             Add to Cart

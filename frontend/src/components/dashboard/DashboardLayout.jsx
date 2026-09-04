@@ -1,4 +1,11 @@
 import { useEffect, useState } from "react"; //useState stores dashboard data and useEffect runs the APPI request when dashboard loads
+import {
+  Package,
+  Boxes,
+  AlertTriangle,
+  CircleOff,
+} from "lucide-react";
+
 import DashboardSidebar from "./DashboardSidebar";
 import DashboardHeader from "./DashboardHeader";
 import StatCard from "./StatCard";
@@ -11,6 +18,7 @@ import Intelligence from "../Intelligence";
 function DashboardLayout({ role }) {
 
   const [activeSection, setActiveSection] = useState("Overview");
+  const [searchTerm, setSearchTerm] = useState("");
   const [inventory, setInventory] = useState(null);
   const [inventoryDetails, setInventoryDetails] = useState(null);
 
@@ -58,7 +66,7 @@ function DashboardLayout({ role }) {
 }, []); //empty array [] is called dependency array
 
   return (
-    <div className="flex min-h-screen bg-gray-50">
+    <div className="flex min-h-screen bg-slate-50">
 
       <DashboardSidebar
         role={role}
@@ -68,45 +76,60 @@ function DashboardLayout({ role }) {
 
       <div className="flex-1">
 
-        <DashboardHeader role={role} />
+        <DashboardHeader
+         role={role}
+        onLogout={() => {
+          localStorage.removeItem("access_token");
+          localStorage.removeItem("customer_id");
+          localStorage.removeItem("customer_name");
+          localStorage.removeItem("customer_email");
+          localStorage.removeItem("customer_role");
 
-        <main className="p-8">
+          window.location.reload();
+        }}
+        searchTerm={searchTerm}
+        onSearchChange={setSearchTerm}
+        />
+
+        <main className="min-w-0 p-6 lg:p-8">
 
           {activeSection === "Overview" && (
             <div className="pt-1">
-                <h1 className="mt-2 text-3xl font-semibold text-gray-900">
-                    Overview
+                <h1 className="text-3xl font-semibold tracking-tight text-slate-900">
+                  Overview
                 </h1>
 
-                <p className="mt-2 text-gray-500">
-                    Monitor your business activities and performance.
+                <p className="mt-2 max-w-2xl text-sm leading-6 text-slate-500">
+                  A high-level view of your store's current performance and operations.
                 </p>
+
             <div className="grid gap-6 sm:grid-cols-2 lg:grid-cols-4 pt-8" >
 
-            
-              <StatCard
-                title="Total Products"
-                value={inventory ? inventory.total_products : "—"}
-                description="Loading product data"
-              />
-
+            <StatCard
+              title="Total Products"
+              value={inventory ? inventory.total_products : "—"}
+              description="Products in catalog"
+              icon={Package}
+            />
               <StatCard
                 title="Total Stock"
                 value={inventory ? inventory.total_stock : "—"}
                 description="Units currently available"
+                icon={Boxes}
               />
 
               <StatCard
                 title="Low Stock"
                 value={inventory ? inventory.low_stock : "—"}
                 description="Products needing attention"
+                icon={AlertTriangle}
               />
-
-              <StatCard
-                title="Out of Stock"
-                value={inventory ? inventory.out_of_stock : "—"}
-                description="Products unavailable"
-              />
+            <StatCard
+              title="Out of Stock"
+              value={inventory ? inventory.out_of_stock : "—"}
+              description="Products currently unavailable"
+              icon={CircleOff}
+            />
               </div >
               </div> 
           )}

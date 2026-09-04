@@ -181,12 +181,27 @@ function CartDrawer({
               >
                 <div className="flex gap-4">
 
-                  {/* Product placeholder */}
+                  {/* Product placeholder 
                   <div className="flex h-20 w-20 shrink-0 items-center justify-center rounded-xl bg-gradient-to-br from-rose-50 to-amber-50">
                     <span className="text-xs uppercase tracking-wide text-gray-400">
                       Beauty
                     </span>
                   </div>
+                  */}
+
+                    <div className="h-20 w-20 shrink-0 overflow-hidden rounded-xl bg-stone-50">
+                    {item.image ? (
+                        <img
+                        src={`http://127.0.0.1:8000${item.image}`}
+                        alt={item.name}
+                        className="h-full w-full object-contain p-2"
+                        />
+                    ) : (
+                        <div className="flex h-full w-full items-center justify-center text-xs text-gray-400">
+                        No Image
+                        </div>
+                    )}
+                    </div>
 
                   <div className="min-w-0 flex-1">
 

@@ -193,6 +193,7 @@ return (
     <div className="min-h-screen bg-white text-gray-900">
 
       {/* Navigation */}
+      {currentPage !== "dashboard" && (
       <Navbar
         onAuthClick={() => setCurrentPage("auth")}
         onCartClick={() => setIsCartOpen(true)}
@@ -205,6 +206,7 @@ return (
         searchTerm={searchTerm}
         onSearchChange={setSearchTerm}
       />
+      )}
 
       {/* Show homepage */}
       {currentPage === "home" && (
