@@ -4,6 +4,7 @@ import { useState, useEffect } from "react"; /**useEffect lets us run the API re
 import Navbar from "./components/Navbar";
 import Hero from "./components/Hero";
 import ProductSection from "./components/ProductSection";
+import ProductDetails from "./components/ProductDetails";
 import Features from "./components/Features";
 import About from "./components/About";
 import Footer from "./components/Footer";
@@ -11,6 +12,11 @@ import Login from "./components/Login";
 import Cart from "./components/Cart";
 import Checkout from "./components/Checkout";
 import DashboardLayout from "./components/dashboard/DashboardLayout";
+import CartDrawer from "./components/CartDrawer";
+import CategorySection from "./components/CategorySection";
+import OfferSection from "./components/OfferSection";
+import BenefitsSection from "./components/BenefitSection";
+import CommunitySection from "./components/CommunitySection";
 
 function App() {
   
@@ -30,9 +36,16 @@ function App() {
   const [isLoggedIn, setIsLoggedIn] = useState(
   !!localStorage.getItem("access_token") //!!token=ture if !!null=false
 );
+  // Stores whatever the customer types into the search bar
+  const [searchTerm, setSearchTerm] = useState("");
 
- // Handles Add to Cart
-  const handleAddToCart = async (product) => { //tells which product the customer clicked
+  const [selectedProduct, setSelectedProduct] = useState(null);
+
+  // Controls whether the cart drawer is visible
+  const [isCartOpen, setIsCartOpen] = useState(false);
+ 
+  // Handles Add to Cart
+  const handleAddToCart = async (product, quantity=1) => { //tells which product the customer clicked
 
   const token = localStorage.getItem("access_token");
 
@@ -50,6 +63,8 @@ function App() {
     return;
   }
 
+ 
+
   try {
     //send the selected product to FastAPI
     const response = await fetch(
@@ -64,7 +79,7 @@ function App() {
         /**sends the product to FastAPI  */
         body: JSON.stringify({
           product_id: product.id,
-          quantity: 1,
+          quantity: quantity,
         }),
       }
     );
@@ -140,11 +155,28 @@ const handleLoginSuccess = (role) => {
 
 //logout
 const handleLogout = () => {
+  // Remove saved authentication information
+  localStorage.removeItem("access_token");
+  localStorage.removeItem("customer_id");
+  localStorage.removeItem("customer_name");
+  localStorage.removeItem("customer_email");
+  localStorage.removeItem("customer_role");
 
+  // Update React state
   setIsLoggedIn(false);
   setUserRole(null);
   setCartCount(0);
   setCurrentPage("home");
+};
+
+//central navigation funxtion
+const handleNavigate = (page) => {
+  setCurrentPage(page);
+};
+
+const handleViewDetails = (product) => {
+  setSelectedProduct(product);
+  setCurrentPage("product-details");
 };
 
 return (
@@ -152,12 +184,15 @@ return (
 
       {/* Navigation */}
       <Navbar
-        onLoginClick={() => setIsLoginOpen(true)}
-        onCartClick={() => setCurrentPage("cart")}
+        onAuthClick={() => setIsLoginOpen(true)}
+        onCartClick={() => setIsCartOpen(true)}
         onHomeClick={() => setCurrentPage("home")}
+        onNavigate={handleNavigate}
         cartCount={cartCount}
         isLoggedIn={isLoggedIn}
         onLogout={handleLogout}
+        searchTerm={searchTerm}
+        onSearchChange={setSearchTerm}
       />
 
       {/* Show homepage */}
@@ -165,15 +200,34 @@ return (
         <>
           <Hero />
 
-          <ProductSection
-            onAddToCart={handleAddToCart}
+          <CategorySection
+            onCategoryClick={(category) => {
+              console.log("Selected category:", category);
+            }}
           />
 
-          <Features />
+             <OfferSection
+            onCreateAccount={() => setIsLoginOpen(true)}
+          />
 
-          <About />
+          <ProductSection
+             onAddToCart={handleAddToCart}
+              onViewDetails={handleViewDetails}
+              onViewMore={() => handleNavigate("shop")}
+          />
 
-          <Footer />
+          {/* Why Shop With Us */}
+          <BenefitsSection />
+          
+          <CommunitySection />
+
+          {/*<Features />
+
+          <About />*/}
+
+          <Footer 
+            onNavigate={handleNavigate}
+          />
 
           
          {/*<button
@@ -183,6 +237,14 @@ return (
             Dashboard
           </button>*/}
         </>
+      )}
+
+      {currentPage === "product-details" && selectedProduct && (
+        <ProductDetails
+          product={selectedProduct}
+          onBack={() => setCurrentPage("home")}
+          onAddToCart={handleAddToCart}
+        />
       )}
 
       {/* Show cart page */}
@@ -204,6 +266,20 @@ return (
        {currentPage === "dashboard" && (
         <DashboardLayout role={userRole} />
       )}
+
+      <CartDrawer
+        isOpen={isCartOpen}
+        onClose={() => setIsCartOpen(false)}
+        onViewCart={() => {
+          setIsCartOpen(false);
+          setCurrentPage("cart");
+        }}
+        onCheckout={() => {
+          setIsCartOpen(false);
+          setCurrentPage("checkout");
+        }}
+        onCartUpdate={fetchCartCount}
+      />
 
       {/* Login sliding panel */}
       <Login

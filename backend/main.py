@@ -3,6 +3,7 @@ from fastapi.middleware.cors import CORSMiddleware
 from fastapi.security import OAuth2PasswordRequestForm
 from sqlalchemy import text, func #execute raw SQL text through sqlalchemy interface
 from sqlalchemy.orm import Session
+from fastapi.staticfiles import StaticFiles
 
 from database import engine, get_db ,Base #import engine and base we created in db.py
 from models import Product,Customer, Cart, CartItem, Sale, SaleItem
@@ -31,6 +32,10 @@ from security import (
 )
 
 app = FastAPI()
+
+# Serve product images from backend/static/
+app.mount("/static", StaticFiles(directory="static"), name="static")
+
 app.add_middleware(
     CORSMiddleware,
     allow_origins=["http://localhost:5173"], #allow react frontend to communicate with API
@@ -62,8 +67,9 @@ def create_product(product: ProductCreate, db: Session = Depends(get_db)):
         description=product.description,
         price=product.price,
         stock_quantity=product.stock_quantity,
-        reorder_level=product.reorder_level
-    )
+        reorder_level=product.reorder_level,
+        image=product.image
+        )
 
     db.add(new_product)
     db.commit()

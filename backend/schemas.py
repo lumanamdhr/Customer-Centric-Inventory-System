@@ -7,6 +7,7 @@ class ProductCreate(BaseModel):
     price: float
     stock_quantity: int
     reorder_level: int = 10
+    image: str | None = None
 
 class ProductUpdate(BaseModel):
     name: str | None = None
@@ -24,6 +25,7 @@ class ProductResponse(BaseModel):
     price: float
     stock_quantity: int
     reorder_level: int
+    image: str | None
 
     class Config:
         from_attributes = True #without this pydantic may not know how to read the attributes from SQLAlchemy object

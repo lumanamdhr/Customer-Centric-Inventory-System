@@ -1,18 +1,18 @@
 import { useEffect, useState } from "react";
 import ProductCard from "./ProductCard";
 
-function ProductSection({ onAddToCart }) {
-    const [products, setProducts] = useState([]);
-    const [loading, setLoading] = useState(true); /*shows laoding products inncase of delay*/
-    const [message, setMessage] = useState(""); /*displays unable to laod products when it fails*/
-    
-    /*useEffect tells reacts to run this code after the component is loaded*/
-    useEffect(() => {
-      
+function ProductSection({
+  onAddToCart,
+  onViewDetails,
+  onViewMore,
+}) {
+  const [products, setProducts] = useState([]);
+  const [loading, setLoading] = useState(true);
+  const [message, setMessage] = useState("");
+
+  useEffect(() => {
     const fetchProducts = async () => {
-
       try {
-
         const response = await fetch(
           "http://127.0.0.1:8000/products"
         );
@@ -25,80 +25,97 @@ function ProductSection({ onAddToCart }) {
         }
 
         setProducts(data);
-
       } catch (error) {
-
         console.error("Product loading error:", error);
-
         setMessage("Unable to connect to server.");
-
       } finally {
-
         setLoading(false);
-
       }
     };
 
     fetchProducts();
-
   }, []);
-    
+
+  // Only show selected products on Home
+  const featuredProducts = products.slice(0, 8);
+
   return (
     <section
       id="products"
-      className="bg-white px-6 py-20 lg:px-10"
+      className="bg-gradient-to-b from-white via-rose-50/30 to-white px-6 py-16 lg:px-10"
     >
       <div className="mx-auto max-w-7xl">
 
-        {/* Section Heading */}
-        <div className="mb-12 text-center">
-          <p className="text-sm font-semibold uppercase tracking-[0.3em] text-rose-500">
-            Discover Your Beauty
-          </p>
+        {/* Heading */}
+        <div className="mb-14 flex flex-col items-center text-center">
 
-          <h2 className="mt-3 text-3xl font-semibold text-gray-900 md:text-4xl">
-            Featured Products
+          <span className="rounded-full bg-rose-50 px-4 py-2 text-[10px] font-semibold uppercase tracking-[0.3em] text-rose-600">
+            Lakmé Collection
+          </span>
+
+          <h2 className="mt-5 text-3xl font-semibold tracking-tight text-gray-900 sm:text-4xl">
+            Beauty Essentials
           </h2>
 
-          <p className="mx-auto mt-4 max-w-xl text-gray-500">
-            Explore some of the products available through our
-            customer-centric shopping platform.
+          <p className="mt-4 max-w-2xl text-sm leading-7 text-gray-500 sm:text-base">
+            Discover makeup and skincare essentials selected for
+            your everyday beauty routine.
           </p>
+
         </div>
 
-         {/* Loading message */}
+        {/* Loading */}
         {loading && (
-          <p className="text-center text-gray-500">
+          <div className="py-16 text-center text-sm text-gray-500">
             Loading products...
-          </p>
+          </div>
         )}
 
-        {/* Error message */}
+        {/* Error */}
         {!loading && message && (
-          <p className="text-center text-red-500">
+          <div className="py-16 text-center text-sm text-red-500">
             {message}
-          </p>
+          </div>
         )}
 
         {/* Products */}
         {!loading && !message && (
-          <div className="grid gap-x-8 gap-y-14 sm:grid-cols-2 lg:grid-cols-3">
+          <>
+            <div className="grid gap-x-6 gap-y-10 sm:grid-cols-2 lg:grid-cols-4">
 
-            {products.map((product) => (
+              {featuredProducts.map((product) => (
+                <ProductCard
+                  key={product.id}
+                  product={product}
+                  onAddToCart={onAddToCart}
+                  onViewDetails={onViewDetails}
+                />
+              ))}
 
-              <ProductCard
-                key={product.id}
-                product={product}
-                onAddToCart={onAddToCart}
-              />
+            </div>
 
-            ))}
+            {/* View More */}
+            {products.length > 8 && (
+              <div className="mt-14 text-center">
 
-          </div>
+                <button
+                  onClick={onViewMore}
+                  className="group inline-flex cursor-pointer items-center gap-3 rounded-full border border-gray-900 px-8 py-3.5 text-sm font-semibold text-gray-900 transition-all duration-300 hover:bg-gray-900 hover:text-white"
+                >
+                  View More Products
+
+                  <span className="transition duration-300 group-hover:translate-x-1">
+                    →
+                  </span>
+                </button>
+
+              </div>
+            )}
+
+          </>
         )}
 
       </div>
-
     </section>
   );
 }

@@ -12,7 +12,8 @@ class Product(Base):
     price = Column(Float, nullable=False)
     stock_quantity = Column(Integer, nullable=False, default=0)
     reorder_level = Column(Integer, nullable=False, default=10)
-
+    # Stores the path of the product image
+    image = Column(String(255), nullable=True)
 class Cart(Base):
     __tablename__ = "carts"
 
