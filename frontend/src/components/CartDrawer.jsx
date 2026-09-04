@@ -4,7 +4,6 @@ import { X, Minus, Plus, Trash2 } from "lucide-react";
 function CartDrawer({
   isOpen,
   onClose,
-  onViewCart,
   onCheckout,
   onCartUpdate,
 }) {
@@ -271,20 +270,12 @@ function CartDrawer({
           </div>
 
           <button
-            onClick={onViewCart}
-            className="mb-3 w-full cursor-pointer rounded-full border border-gray-900 px-5 py-3 text-sm font-medium text-gray-900 transition hover:bg-gray-900 hover:text-white"
-          >
-            View Full Cart
-          </button>
-
-          <button
             onClick={onCheckout}
             disabled={items.length === 0}
-            className="w-full cursor-pointer rounded-full bg-rose-500 px-5 py-3 text-sm font-medium text-white transition hover:bg-rose-600 disabled:cursor-not-allowed disabled:opacity-40"
-          >
-            Checkout
-          </button>
-
+            className="w-full cursor-pointer rounded-full bg-gray-900 px-5 py-3.5 text-sm font-semibold text-white transition-all duration-300 hover:bg-rose-600 hover:shadow-lg disabled:cursor-not-allowed disabled:bg-gray-300"
+            >
+            Proceed to Checkout
+            </button>
         </div>
 
       </aside>

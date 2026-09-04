@@ -10,6 +10,7 @@ function Navbar({ //props that works when clicked
   onCartClick,
   onHomeClick,
   onNavigate,
+  onSearch,
   cartCount,
   isLoggedIn,
   onLogout,
@@ -46,6 +47,11 @@ function Navbar({ //props that works when clicked
               type="text"
               value={searchTerm}
               onChange={(event) => onSearchChange(event.target.value)} //react controls what apperas inside input
+              onKeyDown={(event) => {
+                if (event.key === "Enter") {
+                  onSearch();
+                }
+              }}
               placeholder="Search products..."
               className="w-full rounded-full border border-stone-200 bg-stone-50 py-3 pl-11 pr-5 text-sm text-gray-700 outline-none transition focus:border-rose-300 focus:bg-white"
             />

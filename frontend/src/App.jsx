@@ -8,7 +8,6 @@ import ProductDetails from "./components/ProductDetails";
 import Features from "./components/Features";
 import About from "./components/About";
 import Footer from "./components/Footer";
-import Login from "./components/Login";
 import Cart from "./components/Cart";
 import Checkout from "./components/Checkout";
 import DashboardLayout from "./components/dashboard/DashboardLayout";
@@ -17,6 +16,8 @@ import CategorySection from "./components/CategorySection";
 import OfferSection from "./components/OfferSection";
 import BenefitsSection from "./components/BenefitSection";
 import CommunitySection from "./components/CommunitySection";
+import Shop from "./components/Shop";
+import Auth from "./components/Auth";
 
 function App() {
   
@@ -30,8 +31,6 @@ function App() {
   // Keeps track of the number shown on the cart icon
   const [cartCount, setCartCount] = useState(0);
 
-  // Controls whether the login panel is open
-  const [isLoginOpen, setIsLoginOpen] = useState(false); 
 
   const [isLoggedIn, setIsLoggedIn] = useState(
   !!localStorage.getItem("access_token") //!!token=ture if !!null=false
@@ -40,6 +39,8 @@ function App() {
   const [searchTerm, setSearchTerm] = useState("");
 
   const [selectedProduct, setSelectedProduct] = useState(null);
+
+  const [selectedCategory, setSelectedCategory] = useState("All");
 
   // Controls whether the cart drawer is visible
   const [isCartOpen, setIsCartOpen] = useState(false);
@@ -179,15 +180,25 @@ const handleViewDetails = (product) => {
   setCurrentPage("product-details");
 };
 
+const handleSearch = () => {
+  setSelectedCategory("All");
+  setCurrentPage("shop");
+};
+
+const handleClearSearch = () => {
+  setSearchTerm("");
+};
+
 return (
     <div className="min-h-screen bg-white text-gray-900">
 
       {/* Navigation */}
       <Navbar
-        onAuthClick={() => setIsLoginOpen(true)}
+        onAuthClick={() => setCurrentPage("auth")}
         onCartClick={() => setIsCartOpen(true)}
         onHomeClick={() => setCurrentPage("home")}
         onNavigate={handleNavigate}
+        onSearch={handleSearch}
         cartCount={cartCount}
         isLoggedIn={isLoggedIn}
         onLogout={handleLogout}
@@ -202,12 +213,13 @@ return (
 
           <CategorySection
             onCategoryClick={(category) => {
-              console.log("Selected category:", category);
+              setSelectedCategory(category);
+              setCurrentPage("shop");
             }}
           />
 
              <OfferSection
-            onCreateAccount={() => setIsLoginOpen(true)}
+            onCreateAccount={() => setCurrentPage("auth")}
           />
 
           <ProductSection
@@ -242,8 +254,27 @@ return (
       {currentPage === "product-details" && selectedProduct && (
         <ProductDetails
           product={selectedProduct}
-          onBack={() => setCurrentPage("home")}
+          onBack={() => setCurrentPage("shop")}
           onAddToCart={handleAddToCart}
+        />
+      )}
+
+      {/*shows shop page */}
+      {currentPage === "shop" && (
+        <Shop
+          onAddToCart={handleAddToCart}
+          onViewDetails={handleViewDetails}
+          initialCategory={selectedCategory}
+          searchTerm={searchTerm}
+          onClearSearch={handleClearSearch}
+        />
+      )}
+
+      {/*the login sign up page */}
+      {currentPage === "auth" && (
+        <Auth
+          onBack={() => setCurrentPage("home")}
+          onLoginSuccess={handleLoginSuccess}
         />
       )}
 
@@ -270,10 +301,6 @@ return (
       <CartDrawer
         isOpen={isCartOpen}
         onClose={() => setIsCartOpen(false)}
-        onViewCart={() => {
-          setIsCartOpen(false);
-          setCurrentPage("cart");
-        }}
         onCheckout={() => {
           setIsCartOpen(false);
           setCurrentPage("checkout");
@@ -281,12 +308,12 @@ return (
         onCartUpdate={fetchCartCount}
       />
 
-      {/* Login sliding panel */}
+      {/* Login sliding panel 
       <Login
         isOpen={isLoginOpen}
         onClose={() => setIsLoginOpen(false)}
         onLoginSuccess={handleLoginSuccess} //login component can communicate the role to App
-      /> 
+      /> */}
 
     </div>
   );
