@@ -58,7 +58,22 @@ class Customer(Base): #creates database model called customer
     String(20),
     nullable=False,
     default="customer"
-)
+    )
+    age = Column(
+    Integer,
+    nullable=True
+    )
+
+    gender = Column(
+        String(20),
+        nullable=True
+    )
+
+    location = Column(
+        String(100),
+        nullable=True
+    )
+
 
 class Sale(Base):
     __tablename__ = "sales"

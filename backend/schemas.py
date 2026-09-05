@@ -97,6 +97,11 @@ class CustomerDashboardResponse(BaseModel):
     role: str
     total_orders: int
     total_spending: float
+    age: int | None = None
+    gender: str | None = None
+    location: str | None = None
+    class Config:
+        from_attributes = True
 
 class IntelligenceProductResponse(BaseModel):
     id: int

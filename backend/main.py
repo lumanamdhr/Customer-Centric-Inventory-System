@@ -708,6 +708,13 @@ def get_customer_dashboard(
     current_user: Customer = Depends(get_current_user)
 ):
 
+    # Only Admin and Employee can access dashboard customer data
+    if current_user.role not in ["admin", "employee"]:
+        raise HTTPException(
+            status_code=403,
+            detail="You do not have permission to view customer data."
+        )
+
     customers = db.query(Customer).all()
 
     result = []
@@ -724,7 +731,12 @@ def get_customer_dashboard(
         )
 
         total_spending = (
-            db.query(func.coalesce(func.sum(Sale.total_amount), 0))
+            db.query(
+                func.coalesce(
+                    func.sum(Sale.total_amount),
+                    0
+                )
+            )
             .filter(
                 Sale.customer_id == customer.id,
                 Sale.status == "completed"
@@ -738,6 +750,9 @@ def get_customer_dashboard(
                 "name": customer.name,
                 "email": customer.email,
                 "role": customer.role,
+                "age": customer.age,
+                "gender": customer.gender,
+                "location": customer.location,
                 "total_orders": total_orders,
                 "total_spending": float(total_spending)
             }
@@ -751,7 +766,7 @@ def get_customer_dashboard(
 )
 def get_inventory_intelligence(
     db: Session = Depends(get_db),
-    current_user: Customer = Depends(get_current_user)
+    current_user: Customer = Depends(get_current_user) #verifies that someone is logged in 
 ):
 
     products = db.query(Product).all()
@@ -781,3 +796,474 @@ def get_inventory_intelligence(
             )
 
     return result
+
+#calculated business intelligence for dashbaord sales
+@app.get("/dashboard/sales")
+def get_sales_dashboard(
+    db: Session = Depends(get_db),
+    current_user: Customer = Depends(get_current_user)
+):
+
+ #get all sales
+    sales = (
+        db.query(Sale)
+        .order_by(Sale.created_at.desc())
+        .all()
+    )
+
+   
+    # 2. BASIC SALES CALCULATIONS
+   
+    total_revenue = sum(
+        sale.total_amount for sale in sales
+    )
+
+    total_orders = len(sales)
+
+    average_order_value = (
+        total_revenue / total_orders
+        if total_orders > 0
+        else 0
+    )
+
+    # 3. TOTAL UNITS SOLD
+    total_units_sold = (
+        db.query(func.coalesce(func.sum(SaleItem.quantity), 0))
+        .scalar()
+    )
+
+    # 4. PAYMENT METHOD BREAKDOWN
+
+
+    payment_results = (
+        db.query(
+            Sale.payment_method,
+            func.count(Sale.id)
+        )
+        .group_by(Sale.payment_method)
+        .all()
+    )
+
+    payment_breakdown = [
+        {
+            "payment_method": payment_method,
+            "orders": orders
+        }
+        for payment_method, orders in payment_results
+    ]
+
+    # 5. TOP SELLING PRODUCTS
+    
+    #group sale items by product and calculate how many units of each product were sold
+    product_results = (
+        db.query(
+            Product.name,
+            func.sum(SaleItem.quantity).label("units_sold"),
+            func.sum(SaleItem.subtotal).label("revenue")
+        )
+        .join(
+            SaleItem,
+            Product.id == SaleItem.product_id
+        )
+        .group_by(Product.id, Product.name)
+        .order_by(
+            func.sum(SaleItem.quantity).desc()
+        )
+        .all()
+    )
+
+    top_products = [
+        {
+            "product_name": product_name,
+            "units_sold": int(units_sold),
+            "revenue": float(revenue)
+        }
+        for product_name, units_sold, revenue in product_results
+    ]
+
+    
+    # 6. MONTHLY REVENUE
+
+    monthly_results = (
+        db.query(
+            func.date_trunc("month", Sale.created_at).label("month"), #groups sales according to the month in which they occurred
+            func.sum(Sale.total_amount).label("revenue")
+        )
+        .group_by("month")
+        .order_by("month")
+        .all()
+    )
+
+    monthly_revenue = [
+        {
+            "month": month.strftime("%Y-%m"),
+            "revenue": float(revenue)
+        }
+        for month, revenue in monthly_results
+    ]
+
+
+    # 7. RECENT SALES
+
+    recent_sales = []
+
+    for sale in sales[:10]:
+
+        customer = (
+            db.query(Customer)
+            .filter(Customer.id == sale.customer_id)
+            .first()
+        )
+
+        recent_sales.append({
+            "id": sale.id,
+            "customer_id": sale.customer_id,
+            "customer_name": customer.name if customer else "Unknown",
+            "total_amount": sale.total_amount,
+            "payment_method": sale.payment_method,
+            "status": sale.status,
+            "created_at": sale.created_at
+        })
+
+    
+    # 8. RETURN DASHBOARD DATA
+
+
+    return {
+        "total_revenue": total_revenue,
+        "total_orders": total_orders,
+        "average_order_value": average_order_value,
+        "total_units_sold": int(total_units_sold),
+
+        "payment_breakdown": payment_breakdown,
+
+        "top_products": top_products,
+
+        "monthly_revenue": monthly_revenue,
+
+        "recent_sales": recent_sales
+    }
+
+#customer analytics and buying behvaiour
+@app.get("/dashboard/customers")
+def get_customer_analytics(
+    db: Session = Depends(get_db),
+    current_user: Customer = Depends(get_current_user)
+):
+
+    # =====================================================
+    # ROLE CHECK
+    # =====================================================
+
+    if current_user.role not in ["admin", "employee"]:
+        raise HTTPException(
+            status_code=403,
+            detail="You do not have permission to view customer analytics."
+        )
+
+
+    # =====================================================
+    # GET ONLY REAL CUSTOMERS
+    # =====================================================
+
+    customers = (
+        db.query(Customer)
+        .filter(Customer.role == "customer")
+        .all()
+    )
+
+
+    # =====================================================
+    # BASIC CUSTOMER SUMMARY
+    # =====================================================
+
+    total_customers = len(customers)
+
+    total_orders = (
+        db.query(Sale)
+        .join(Customer, Customer.id == Sale.customer_id)
+        .filter(
+            Customer.role == "customer",
+            Sale.status == "completed"
+        )
+        .count()
+    )
+
+
+    total_spending = (
+        db.query(
+            func.coalesce(
+                func.sum(Sale.total_amount),
+                0
+            )
+        )
+        .join(Customer, Customer.id == Sale.customer_id)
+        .filter(
+            Customer.role == "customer",
+            Sale.status == "completed"
+        )
+        .scalar()
+    )
+
+
+    average_customer_spending = (
+        float(total_spending) / total_customers
+        if total_customers > 0
+        else 0
+    )
+
+
+    # =====================================================
+    # AGE GROUP ANALYSIS
+    # =====================================================
+
+    age_groups = {
+        "18-24": 0,
+        "25-34": 0,
+        "35-44": 0,
+        "45+": 0
+    }
+
+
+    for customer in customers:
+
+        if customer.age is None:
+            continue
+
+        if 18 <= customer.age <= 24:
+            age_groups["18-24"] += 1
+
+        elif 25 <= customer.age <= 34:
+            age_groups["25-34"] += 1
+
+        elif 35 <= customer.age <= 44:
+            age_groups["35-44"] += 1
+
+        elif customer.age >= 45:
+            age_groups["45+"] += 1
+
+
+    age_group_data = [
+        {
+            "age_group": group,
+            "customers": count
+        }
+        for group, count in age_groups.items()
+    ]
+
+
+    # =====================================================
+    # GENDER ANALYSIS
+    # =====================================================
+
+    gender_results = (
+        db.query(
+            Customer.gender,
+            func.count(Customer.id)
+        )
+        .filter(
+            Customer.role == "customer"
+        )
+        .group_by(Customer.gender)
+        .all()
+    )
+
+
+    gender_data = [
+        {
+            "gender": gender,
+            "customers": count
+        }
+        for gender, count in gender_results
+    ]
+
+
+    # =====================================================
+    # LOCATION ANALYSIS
+    # =====================================================
+
+    location_results = (
+        db.query(
+            Customer.location,
+            func.count(Customer.id)
+        )
+        .filter(
+            Customer.role == "customer"
+        )
+        .group_by(Customer.location)
+        .order_by(
+            func.count(Customer.id).desc()
+        )
+        .all()
+    )
+
+
+    location_data = [
+        {
+            "location": location,
+            "customers": count
+        }
+        for location, count in location_results
+    ]
+
+
+    # =====================================================
+    # TOP CUSTOMERS BY SPENDING
+    # =====================================================
+
+    top_customer_results = (
+        db.query(
+            Customer.id,
+            Customer.name,
+            func.count(Sale.id).label("orders"),
+            func.coalesce(
+                func.sum(Sale.total_amount),
+                0
+            ).label("spending")
+        )
+        .join(
+            Sale,
+            Customer.id == Sale.customer_id
+        )
+        .filter(
+            Customer.role == "customer",
+            Sale.status == "completed"
+        )
+        .group_by(
+            Customer.id,
+            Customer.name
+        )
+        .order_by(
+            func.sum(Sale.total_amount).desc()
+        )
+        .all()
+    )
+
+
+    top_customers = [
+        {
+            "id": customer_id,
+            "name": name,
+            "orders": orders,
+            "spending": float(spending)
+        }
+        for customer_id, name, orders, spending
+        in top_customer_results
+    ]
+
+
+    # =====================================================
+    # POPULAR PRODUCTS
+    # =====================================================
+
+    product_results = (
+        db.query(
+            Product.name,
+            func.sum(SaleItem.quantity).label("units_sold")
+        )
+        .join(
+            SaleItem,
+            Product.id == SaleItem.product_id
+        )
+        .join(
+            Sale,
+            Sale.id == SaleItem.sale_id
+        )
+        .join(
+            Customer,
+            Customer.id == Sale.customer_id
+        )
+        .filter(
+            Customer.role == "customer",
+            Sale.status == "completed"
+        )
+        .group_by(
+            Product.id,
+            Product.name
+        )
+        .order_by(
+            func.sum(SaleItem.quantity).desc()
+        )
+        .all()
+    )
+
+
+    popular_products = [
+        {
+            "product_name": product_name,
+            "units_sold": int(units_sold)
+        }
+        for product_name, units_sold
+        in product_results
+    ]
+
+
+    # =====================================================
+    # CATEGORY BUYING BEHAVIOR
+    # =====================================================
+
+    category_results = (
+        db.query(
+            Product.category,
+            func.sum(SaleItem.quantity).label("units_sold")
+        )
+        .join(
+            SaleItem,
+            Product.id == SaleItem.product_id
+        )
+        .join(
+            Sale,
+            Sale.id == SaleItem.sale_id
+        )
+        .join(
+            Customer,
+            Customer.id == Sale.customer_id
+        )
+        .filter(
+            Customer.role == "customer",
+            Sale.status == "completed"
+        )
+        .group_by(
+            Product.category
+        )
+        .order_by(
+            func.sum(SaleItem.quantity).desc()
+        )
+        .all()
+    )
+
+
+    category_behavior = [
+        {
+            "category": category,
+            "units_sold": int(units_sold)
+        }
+        for category, units_sold
+        in category_results
+    ]
+
+
+    # =====================================================
+    # FINAL RESPONSE
+    # =====================================================
+
+    return {
+        "summary": {
+            "total_customers": total_customers,
+            "total_orders": total_orders,
+            "total_spending": float(total_spending),
+            "average_customer_spending": average_customer_spending
+        },
+
+        "demographics": {
+            "age_groups": age_group_data,
+            "gender": gender_data,
+            "location": location_data
+        },
+
+        "buying_behavior": {
+            "top_customers": top_customers,
+            "popular_products": popular_products,
+            "category_behavior": category_behavior
+        }
+    }
