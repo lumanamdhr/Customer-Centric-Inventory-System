@@ -6,11 +6,13 @@ import {
   Boxes,
   Search,
   Pencil,
+  Trash2,
+  Plus,
   X,
   Save,
 } from "lucide-react";
 
-function Inventory() {
+function Inventory({ role }) {
   const [products, setProducts] = useState([]);
 
   const [inventoryDetails, setInventoryDetails] =
@@ -154,6 +156,24 @@ function Inventory() {
     setSaveMessage("");
   };
 
+    // Product being added
+  const [showAddModal, setShowAddModal] = useState(false);
+
+  const [newProduct, setNewProduct] = useState({
+    name: "",
+    category: "Face",
+    description: "",
+    price: "",
+    stock_quantity: "",
+    reorder_level: "10",
+  });
+
+    const [productImage, setProductImage] = useState(null);
+    const [imagePreview, setImagePreview] = useState(null);
+
+    const [adding, setAdding] = useState(false);
+    const [addMessage, setAddMessage] = useState("");
+
   // ==========================================================
   // CLOSE EDIT MODAL
   // ==========================================================
@@ -187,6 +207,7 @@ function Inventory() {
 
           headers: {
             "Content-Type": "application/json",
+             Authorization: `Bearer ${localStorage.getItem("access_token")}`,
           },
 
           body: JSON.stringify({
@@ -238,6 +259,192 @@ function Inventory() {
     }
   };
 
+    const openAddModal = () => {
+    setNewProduct({
+      name: "",
+      category: "Face",
+      description: "",
+      price: "",
+      stock_quantity: "",
+      reorder_level: "10",
+    });
+
+    setProductImage(null);
+    setImagePreview(null);
+    setAddMessage("");
+    setShowAddModal(true);
+  };
+
+    const closeAddModal = () => {
+    if (adding) {
+      return;
+    }
+
+    setShowAddModal(false);
+    setAddMessage("");
+    setProductImage(null);
+    setImagePreview(null);
+  };
+
+    const handleNewProductChange = (event) => {
+    const { name, value } = event.target;
+
+    setNewProduct((previous) => ({
+      ...previous,
+      [name]: value,
+    }));
+  };
+
+    const handleProductImageChange = (event) => {
+    const file = event.target.files?.[0];
+
+    if (!file) {
+      return;
+    }
+
+    setProductImage(file);
+
+    const previewUrl = URL.createObjectURL(file);
+    setImagePreview(previewUrl);
+  };
+
+    const handleAddProduct = async (event) => {
+    event.preventDefault();
+
+    setAdding(true);
+    setAddMessage("");
+
+    const token = localStorage.getItem("access_token");
+
+    if (!token) {
+      setAddMessage("You are not authenticated.");
+      setAdding(false);
+      return;
+    }
+
+    try {
+      const formData = new FormData();
+
+      formData.append("name", newProduct.name);
+      formData.append("category", newProduct.category);
+      formData.append(
+        "description",
+        newProduct.description
+      );
+      formData.append("price", newProduct.price);
+      formData.append(
+        "stock_quantity",
+        newProduct.stock_quantity
+      );
+      formData.append(
+        "reorder_level",
+        newProduct.reorder_level
+      );
+
+      if (productImage) {
+        formData.append("image", productImage);
+      }
+
+      const response = await fetch(
+        "http://127.0.0.1:8000/products",
+        {
+          method: "POST",
+
+          headers: {
+            Authorization: `Bearer ${token}`,
+          },
+
+          body: formData,
+        }
+      );
+
+      const data = await response.json();
+
+      if (!response.ok) {
+        console.error("Product creation failed:", data);
+
+        setAddMessage(
+          typeof data.detail === "string"
+            ? data.detail
+            : "Unable to add product."
+        );
+
+        return;
+      }
+
+      setAddMessage("Product added successfully.");
+
+      await fetchInventory();
+
+      setTimeout(() => {
+        setShowAddModal(false);
+        setAddMessage("");
+        setProductImage(null);
+        setImagePreview(null);
+      }, 700);
+
+    } catch (error) {
+      console.error("Product creation error:", error);
+
+      setAddMessage(
+        "Unable to connect to the server."
+      );
+    } finally {
+      setAdding(false);
+    }
+  };
+
+    const handleDeleteProduct = async (productId) => {
+    const confirmed = window.confirm(
+      "Are you sure you want to delete this product?"
+    );
+
+    if (!confirmed) {
+      return;
+    }
+
+    const token = localStorage.getItem("access_token");
+
+    if (!token) {
+      alert("You are not authenticated.");
+      return;
+    }
+
+    try {
+      const response = await fetch(
+        `http://127.0.0.1:8000/products/${productId}`,
+        {
+          method: "DELETE",
+
+          headers: {
+            Authorization: `Bearer ${token}`,
+          },
+        }
+      );
+
+      const data = await response.json();
+
+      if (!response.ok) {
+        console.error("Product deletion failed:", data);
+
+        alert(
+          typeof data.detail === "string"
+            ? data.detail
+            : "Unable to delete product."
+        );
+
+        return;
+      }
+
+      await fetchInventory();
+
+    } catch (error) {
+      console.error("Product deletion error:", error);
+
+      alert("Unable to connect to the server.");
+    }
+  };
+
   return (
     <section className="relative">
 
@@ -266,9 +473,23 @@ function Inventory() {
 
           </div>
 
+        <div className="flex items-center gap-3">
+
+          {role === "admin" && (
+           <button
+            onClick={openAddModal}
+            className="inline-flex cursor-pointer items-center gap-2 rounded-xl bg-teal-600 px-4 py-2.5 text-sm font-semibold text-white transition hover:bg-teal-700"
+          >
+            <Plus size={16} />
+            Add Product
+          </button>
+          )}
+
           <div className="rounded-full bg-teal-50 px-4 py-2 text-xs font-semibold text-teal-700">
             {products.length} Products
           </div>
+
+        </div>
 
         </div>
 
@@ -606,16 +827,34 @@ function Inventory() {
 
                         {/* Edit */}
                         <td className="px-6 py-5 text-right">
+                            <div className="flex items-center justify-end gap-2">
 
-                          <button
-                            onClick={() =>
-                              openEditModal(product)
-                            }
-                            className="inline-flex cursor-pointer items-center gap-2 rounded-lg px-3 py-2 text-xs font-semibold text-slate-600 transition hover:bg-teal-50 hover:text-teal-700"
-                          >
-                            <Pencil size={14} />
-                            Edit
-                          </button>
+                              {/* Edit - Admin + Employee */}
+                              <button
+                                onClick={() =>
+                                  openEditModal(product)
+                                }
+                                className="inline-flex cursor-pointer items-center gap-2 rounded-lg px-3 py-2 text-xs font-semibold text-slate-600 transition hover:bg-teal-50 hover:text-teal-700"
+                              >
+                                <Pencil size={14} />
+                                Edit
+                              </button>
+
+                              {/* Delete - Admin only */}
+                              {role === "admin" && (
+                                <button
+                                  onClick={() =>
+                                    handleDeleteProduct(product.id)
+                                  }
+                                  className="inline-flex cursor-pointer items-center gap-2 rounded-lg px-3 py-2 text-xs font-semibold text-red-600 transition hover:bg-red-50"
+                                >
+                                  <Trash2 size={14} />
+                                  Delete
+                                </button>
+                              )}
+
+                            </div>
+                                                      
 
                         </td>
 
@@ -850,6 +1089,265 @@ function Inventory() {
               </button>
 
             </div>
+
+          </div>
+
+        </div>
+      )}
+
+            {/* ======================================================
+          ADD PRODUCT MODAL
+          ====================================================== */}
+
+      {showAddModal && (
+        <div className="fixed inset-0 z-[100] flex items-center justify-center bg-slate-950/40 px-4 py-6 backdrop-blur-sm">
+
+          <div className="max-h-[90vh] w-full max-w-2xl overflow-y-auto rounded-3xl bg-white shadow-2xl">
+
+            {/* Header */}
+            <div className="flex items-center justify-between border-b border-slate-200 px-6 py-5">
+
+              <div>
+                <p className="text-xs font-semibold uppercase tracking-[0.2em] text-teal-700">
+                  Product Management
+                </p>
+
+                <h2 className="mt-1 text-xl font-semibold text-slate-900">
+                  Add Product
+                </h2>
+              </div>
+
+              <button
+                onClick={closeAddModal}
+                disabled={adding}
+                className="cursor-pointer rounded-full p-2 text-slate-400 transition hover:bg-slate-100 hover:text-slate-900 disabled:cursor-not-allowed"
+              >
+                <X size={20} />
+              </button>
+
+            </div>
+
+
+            {/* Form */}
+            <form
+              onSubmit={handleAddProduct}
+              className="space-y-5 px-6 py-6"
+            >
+
+              {/* Product Name */}
+              <div>
+
+                <label className="mb-2 block text-sm font-medium text-slate-700">
+                  Product Name
+                </label>
+
+                <input
+                  type="text"
+                  name="name"
+                  value={newProduct.name}
+                  onChange={handleNewProductChange}
+                  placeholder="Enter product name"
+                  required
+                  className="w-full rounded-xl border border-slate-200 bg-slate-50 px-4 py-3 text-sm outline-none focus:border-teal-500 focus:bg-white"
+                />
+
+              </div>
+
+
+              {/* Category */}
+              <div>
+
+                <label className="mb-2 block text-sm font-medium text-slate-700">
+                  Category
+                </label>
+
+                <select
+                  name="category"
+                  value={newProduct.category}
+                  onChange={handleNewProductChange}
+                  className="w-full rounded-xl border border-slate-200 bg-slate-50 px-4 py-3 text-sm outline-none focus:border-teal-500 focus:bg-white"
+                >
+                  <option value="Face">Face</option>
+                  <option value="Lips">Lips</option>
+                  <option value="Eyes">Eyes</option>
+                  <option value="Skincare">
+                    Skincare
+                  </option>
+                </select>
+
+              </div>
+
+
+              {/* Description */}
+              <div>
+
+                <label className="mb-2 block text-sm font-medium text-slate-700">
+                  Description
+                </label>
+
+                <textarea
+                  name="description"
+                  rows="4"
+                  value={newProduct.description}
+                  onChange={handleNewProductChange}
+                  placeholder="Enter product description"
+                  className="w-full resize-none rounded-xl border border-slate-200 bg-slate-50 px-4 py-3 text-sm leading-6 outline-none focus:border-teal-500 focus:bg-white"
+                />
+
+              </div>
+
+
+              {/* Price + Stock + Reorder */}
+              <div className="grid gap-5 sm:grid-cols-3">
+
+                <div>
+
+                  <label className="mb-2 block text-sm font-medium text-slate-700">
+                    Price
+                  </label>
+
+                  <input
+                    type="number"
+                    name="price"
+                    min="0"
+                    step="0.01"
+                    value={newProduct.price}
+                    onChange={handleNewProductChange}
+                    placeholder="500"
+                    required
+                    className="w-full rounded-xl border border-slate-200 bg-slate-50 px-4 py-3 text-sm outline-none focus:border-teal-500 focus:bg-white"
+                  />
+
+                </div>
+
+
+                <div>
+
+                  <label className="mb-2 block text-sm font-medium text-slate-700">
+                    Stock
+                  </label>
+
+                  <input
+                    type="number"
+                    name="stock_quantity"
+                    min="0"
+                    value={newProduct.stock_quantity}
+                    onChange={handleNewProductChange}
+                    placeholder="25"
+                    required
+                    className="w-full rounded-xl border border-slate-200 bg-slate-50 px-4 py-3 text-sm outline-none focus:border-teal-500 focus:bg-white"
+                  />
+
+                </div>
+
+
+                <div>
+
+                  <label className="mb-2 block text-sm font-medium text-slate-700">
+                    Reorder Level
+                  </label>
+
+                  <input
+                    type="number"
+                    name="reorder_level"
+                    min="0"
+                    value={newProduct.reorder_level}
+                    onChange={handleNewProductChange}
+                    placeholder="10"
+                    required
+                    className="w-full rounded-xl border border-slate-200 bg-slate-50 px-4 py-3 text-sm outline-none focus:border-teal-500 focus:bg-white"
+                  />
+
+                </div>
+
+              </div>
+
+
+              {/* Product Photo */}
+              <div>
+
+                <label className="mb-2 block text-sm font-medium text-slate-700">
+                  Product Photo
+                </label>
+
+                <input
+                  type="file"
+                  accept="image/png,image/jpeg,image/webp"
+                  onChange={handleProductImageChange}
+                  className="block w-full cursor-pointer rounded-xl border border-slate-200 bg-slate-50 text-sm text-slate-600 file:mr-4 file:border-0 file:bg-teal-600 file:px-4 file:py-3 file:text-sm file:font-semibold file:text-white hover:file:bg-teal-700"
+                />
+
+                <p className="mt-2 text-xs text-slate-400">
+                  JPG, JPEG, PNG or WEBP
+                </p>
+
+              </div>
+
+
+              {/* Image Preview */}
+              {imagePreview && (
+                <div>
+
+                  <p className="mb-2 text-sm font-medium text-slate-700">
+                    Preview
+                  </p>
+
+                  <div className="flex h-48 items-center justify-center overflow-hidden rounded-2xl border border-slate-200 bg-slate-50">
+
+                    <img
+                      src={imagePreview}
+                      alt="Product preview"
+                      className="h-full w-full object-contain p-4"
+                    />
+
+                  </div>
+
+                </div>
+              )}
+
+
+              {/* Message */}
+              {addMessage && (
+                <div
+                  className={`rounded-xl px-4 py-3 text-sm font-medium ${
+                    addMessage ===
+                    "Product added successfully."
+                      ? "bg-emerald-50 text-emerald-700"
+                      : "bg-red-50 text-red-600"
+                  }`}
+                >
+                  {addMessage}
+                </div>
+              )}
+
+
+              {/* Footer */}
+              <div className="flex flex-col-reverse gap-3 border-t border-slate-200 pt-5 sm:flex-row sm:justify-end">
+
+                <button
+                  type="button"
+                  onClick={closeAddModal}
+                  disabled={adding}
+                  className="cursor-pointer rounded-xl border border-slate-200 px-5 py-3 text-sm font-semibold text-slate-600 transition hover:bg-slate-50 disabled:cursor-not-allowed disabled:opacity-50"
+                >
+                  Cancel
+                </button>
+
+                <button
+                  type="submit"
+                  disabled={adding}
+                  className="inline-flex cursor-pointer items-center justify-center gap-2 rounded-xl bg-teal-600 px-5 py-3 text-sm font-semibold text-white transition hover:bg-teal-700 disabled:cursor-not-allowed disabled:opacity-50"
+                >
+                  <Plus size={16} />
+
+                  {adding
+                    ? "Adding..."
+                    : "Add Product"}
+                </button>
+
+              </div>
+
+            </form>
 
           </div>
 

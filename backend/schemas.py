@@ -109,3 +109,12 @@ class IntelligenceProductResponse(BaseModel):
     stock_quantity: int
     reorder_level: int
     suggested_reorder_quantity: int
+
+class AdminUserCreate(BaseModel):
+    name: str
+    email: str
+    password: str
+    role: str
+    age: int | None = None
+    gender: str | None = None
+    location: str | None = None

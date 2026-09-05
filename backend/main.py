@@ -1,9 +1,13 @@
-from fastapi import FastAPI, Depends, HTTPException #depends tell before running API, the other thing is needed first
+from fastapi import FastAPI, Depends, HTTPException, UploadFile, File, Form #depends tell before running API, the other thing is needed first
 from fastapi.middleware.cors import CORSMiddleware
 from fastapi.security import OAuth2PasswordRequestForm
 from sqlalchemy import text, func #execute raw SQL text through sqlalchemy interface
 from sqlalchemy.orm import Session
 from fastapi.staticfiles import StaticFiles
+
+import os
+import uuid
+from pathlib import Path
 
 from database import engine, get_db ,Base #import engine and base we created in db.py
 from models import Product,Customer, Cart, CartItem, Sale, SaleItem
@@ -21,7 +25,8 @@ from schemas import (
     CheckoutRequest,
     SaleResponse,
     CustomerDashboardResponse,
-    IntelligenceProductResponse
+    IntelligenceProductResponse,
+    AdminUserCreate
     )
 from security import (
     hash_password, 
@@ -59,17 +64,63 @@ def database_test():
         }
 
 @app.post("/products", response_model=ProductResponse)
-def create_product(product: ProductCreate, db: Session = Depends(get_db)):
+async def create_product(
+    name: str = Form(...),
+    category: str = Form(...),
+    description: str | None = Form(None),
+    price: float = Form(...),
+    stock_quantity: int = Form(...),
+    reorder_level: int = Form(10),
+    image: UploadFile | None = File(None),
+    db: Session = Depends(get_db),
+    current_user: Customer = Depends(get_current_user)
+):
+
+    if current_user.role != "admin":
+        raise HTTPException(
+            status_code=403,
+            detail="Only administrators can add products."
+        )
+
+    image_path = None
+
+    if image:
+        upload_directory = Path("static/products")
+        upload_directory.mkdir(parents=True, exist_ok=True)
+
+        file_extension = Path(image.filename).suffix.lower()
+
+        allowed_extensions = {
+            ".jpg",
+            ".jpeg",
+            ".png",
+            ".webp"
+        }
+
+        if file_extension not in allowed_extensions:
+            raise HTTPException(
+                status_code=400,
+                detail="Only JPG, JPEG, PNG, and WEBP images are allowed."
+            )
+
+        unique_filename = f"{uuid.uuid4()}{file_extension}"
+
+        file_location = upload_directory / unique_filename
+
+        with open(file_location, "wb") as buffer:
+            buffer.write(await image.read())
+
+        image_path = f"/static/products/{unique_filename}"
 
     new_product = Product(
-        name=product.name,
-        category=product.category,
-        description=product.description,
-        price=product.price,
-        stock_quantity=product.stock_quantity,
-        reorder_level=product.reorder_level,
-        image=product.image
-        )
+        name=name,
+        category=category,
+        description=description,
+        price=price,
+        stock_quantity=stock_quantity,
+        reorder_level=reorder_level,
+        image=image_path
+    )
 
     db.add(new_product)
     db.commit()
@@ -100,8 +151,15 @@ def get_product(product_id: int, db: Session = Depends(get_db)):
 def update_product(
     product_id: int,
     product_update: ProductUpdate,
-    db: Session = Depends(get_db)
+    db: Session = Depends(get_db),
+    current_user: Customer = Depends(get_current_user)
 ):
+
+    if current_user.role not in ["admin", "employee"]:
+        raise HTTPException(
+            status_code=403,
+            detail="Only administrators and employees can edit products."
+        )
 
     product = db.query(Product).filter(Product.id == product_id).first()
 
@@ -111,10 +169,10 @@ def update_product(
             detail="Product not found"
         )
 
-    update_data = product_update.model_dump(exclude_unset=True) #only update fields the user actually provided
+    update_data = product_update.model_dump(exclude_unset=True)
 
     for field, value in update_data.items():
-        setattr(product, field, value) #product ko kun field ma kati value update garne herxa
+        setattr(product, field, value)
 
     db.commit()
     db.refresh(product)
@@ -122,7 +180,17 @@ def update_product(
     return product
 
 @app.delete("/products/{product_id}")
-def delete_product(product_id: int, db: Session = Depends(get_db)):
+def delete_product(
+    product_id: int,
+    db: Session = Depends(get_db),
+    current_user: Customer = Depends(get_current_user)
+):
+
+    if current_user.role != "admin":
+        raise HTTPException(
+            status_code=403,
+            detail="Only administrators can delete products."
+        )
 
     product = db.query(Product).filter(Product.id == product_id).first()
 
@@ -951,20 +1019,14 @@ def get_customer_analytics(
     current_user: Customer = Depends(get_current_user)
 ):
 
-    # =====================================================
     # ROLE CHECK
-    # =====================================================
-
     if current_user.role not in ["admin", "employee"]:
         raise HTTPException(
             status_code=403,
             detail="You do not have permission to view customer analytics."
         )
 
-
-    # =====================================================
-    # GET ONLY REAL CUSTOMERS
-    # =====================================================
+    # GET ONLY REAL CUSTOMERs
 
     customers = (
         db.query(Customer)
@@ -972,10 +1034,7 @@ def get_customer_analytics(
         .all()
     )
 
-
-    # =====================================================
     # BASIC CUSTOMER SUMMARY
-    # =====================================================
 
     total_customers = len(customers)
 
@@ -1012,10 +1071,7 @@ def get_customer_analytics(
         else 0
     )
 
-
-    # =====================================================
     # AGE GROUP ANALYSIS
-    # =====================================================
 
     age_groups = {
         "18-24": 0,
@@ -1051,10 +1107,7 @@ def get_customer_analytics(
         for group, count in age_groups.items()
     ]
 
-
-    # =====================================================
     # GENDER ANALYSIS
-    # =====================================================
 
     gender_results = (
         db.query(
@@ -1077,10 +1130,7 @@ def get_customer_analytics(
         for gender, count in gender_results
     ]
 
-
-    # =====================================================
     # LOCATION ANALYSIS
-    # =====================================================
 
     location_results = (
         db.query(
@@ -1105,11 +1155,7 @@ def get_customer_analytics(
         }
         for location, count in location_results
     ]
-
-
-    # =====================================================
     # TOP CUSTOMERS BY SPENDING
-    # =====================================================
 
     top_customer_results = (
         db.query(
@@ -1151,10 +1197,7 @@ def get_customer_analytics(
         in top_customer_results
     ]
 
-
-    # =====================================================
     # POPULAR PRODUCTS
-    # =====================================================
 
     product_results = (
         db.query(
@@ -1197,11 +1240,7 @@ def get_customer_analytics(
         in product_results
     ]
 
-
-    # =====================================================
     # CATEGORY BUYING BEHAVIOR
-    # =====================================================
-
     category_results = (
         db.query(
             Product.category,
@@ -1241,12 +1280,7 @@ def get_customer_analytics(
         for category, units_sold
         in category_results
     ]
-
-
-    # =====================================================
     # FINAL RESPONSE
-    # =====================================================
-
     return {
         "summary": {
             "total_customers": total_customers,
@@ -1266,4 +1300,777 @@ def get_customer_analytics(
             "popular_products": popular_products,
             "category_behavior": category_behavior
         }
+    }
+
+##business inteligence inventory
+@app.get("/dashboard/intelligence")
+def get_dashboard_intelligence(
+    db: Session = Depends(get_db),
+    current_user: Customer = Depends(get_current_user)
+):
+    # ROLE CHECK
+
+    if current_user.role != "admin":
+     raise HTTPException(
+        status_code=403,
+        detail="You do not have permission to view intelligence."
+    )
+
+    # INVENTORY ANALYSIS
+    products = db.query(Product).all()
+
+    total_products = len(products)
+
+    out_of_stock_products = [
+        product
+        for product in products
+        if product.stock_quantity == 0
+    ]
+
+    low_stock_products = [
+        product
+        for product in products
+        if product.stock_quantity > 0
+        and product.stock_quantity <= product.reorder_level
+    ]
+
+
+    # Create reorder recommendations
+    reorder_recommendations = []
+
+    for product in products:
+
+        if product.stock_quantity <= product.reorder_level:
+
+            suggested_quantity = (
+                product.reorder_level * 2
+                - product.stock_quantity
+            )
+
+            reorder_recommendations.append(
+                {
+                    "product_name": product.name,
+                    "current_stock": product.stock_quantity,
+                    "reorder_level": product.reorder_level,
+                    "suggested_reorder": max(
+                        suggested_quantity,
+                        0
+                    ),
+                    "priority": (
+                        "High"
+                        if product.stock_quantity == 0
+                        else "Medium"
+                    )
+                }
+            )
+
+    # SALES ANALYSIS
+
+    completed_sales = (
+        db.query(Sale)
+        .filter(
+            Sale.status == "completed"
+        )
+        .all()
+    )
+
+
+    total_revenue = sum(
+        sale.total_amount
+        for sale in completed_sales
+    )
+
+    total_orders = len(completed_sales)
+
+    average_order_value = (
+        total_revenue / total_orders
+        if total_orders > 0
+        else 0
+    )
+
+
+    total_units_sold = (
+        db.query(
+            func.coalesce(
+                func.sum(SaleItem.quantity),
+                0
+            )
+        )
+        .join(
+            Sale,
+            Sale.id == SaleItem.sale_id
+        )
+        .filter(
+            Sale.status == "completed"
+        )
+        .scalar()
+    )
+
+
+    # TOP SELLING PRODUCT
+
+    top_product_result = (
+        db.query(
+            Product.name,
+            func.sum(
+                SaleItem.quantity
+            ).label("units_sold")
+        )
+        .join(
+            SaleItem,
+            Product.id == SaleItem.product_id
+        )
+        .join(
+            Sale,
+            Sale.id == SaleItem.sale_id
+        )
+        .filter(
+            Sale.status == "completed"
+        )
+        .group_by(
+            Product.id,
+            Product.name
+        )
+        .order_by(
+            func.sum(
+                SaleItem.quantity
+            ).desc()
+        )
+        .first()
+    )
+
+
+    top_product = None
+
+    if top_product_result:
+
+        top_product = {
+            "name": top_product_result[0],
+            "units_sold": int(
+                top_product_result[1]
+            )
+        }
+
+
+    # TOP SELLING CATEGORY
+
+    top_category_result = (
+        db.query(
+            Product.category,
+            func.sum(
+                SaleItem.quantity
+            ).label("units_sold")
+        )
+        .join(
+            SaleItem,
+            Product.id == SaleItem.product_id
+        )
+        .join(
+            Sale,
+            Sale.id == SaleItem.sale_id
+        )
+        .filter(
+            Sale.status == "completed"
+        )
+        .group_by(
+            Product.category
+        )
+        .order_by(
+            func.sum(
+                SaleItem.quantity
+            ).desc()
+        )
+        .first()
+    )
+
+
+    top_category = None
+
+    if top_category_result:
+
+        top_category = {
+            "category": top_category_result[0],
+            "units_sold": int(
+                top_category_result[1]
+            )
+        }
+
+
+    # CUSTOMER ANALYSIS
+
+    customers = (
+        db.query(Customer)
+        .filter(
+            Customer.role == "customer"
+        )
+        .all()
+    )
+
+
+    total_customers = len(customers)
+
+
+    # Customers who have completed at least one order
+    active_buyers = (
+        db.query(
+            func.count(
+                func.distinct(
+                    Sale.customer_id
+                )
+            )
+        )
+        .join(
+            Customer,
+            Customer.id == Sale.customer_id
+        )
+        .filter(
+            Customer.role == "customer",
+            Sale.status == "completed"
+        )
+        .scalar()
+    )
+
+
+    # TOP CUSTOMER
+
+    top_customer_result = (
+        db.query(
+            Customer.name,
+            func.count(
+                Sale.id
+            ).label("orders"),
+            func.sum(
+                Sale.total_amount
+            ).label("spending")
+        )
+        .join(
+            Sale,
+            Customer.id == Sale.customer_id
+        )
+        .filter(
+            Customer.role == "customer",
+            Sale.status == "completed"
+        )
+        .group_by(
+            Customer.id,
+            Customer.name
+        )
+        .order_by(
+            func.sum(
+                Sale.total_amount
+            ).desc()
+        )
+        .first()
+    )
+
+
+    top_customer = None
+
+    if top_customer_result:
+
+        top_customer = {
+            "name": top_customer_result[0],
+            "orders": int(
+                top_customer_result[1]
+            ),
+            "spending": float(
+                top_customer_result[2]
+            )
+        }
+
+
+    # CUSTOMER DEMOGRAPHIC ANALYSIS
+
+    age_group_counts = {
+        "18-24": 0,
+        "25-34": 0,
+        "35-44": 0,
+        "45+": 0
+    }
+
+
+    for customer in customers:
+
+        if customer.age is None:
+            continue
+
+        if 18 <= customer.age <= 24:
+            age_group_counts["18-24"] += 1
+
+        elif 25 <= customer.age <= 34:
+            age_group_counts["25-34"] += 1
+
+        elif 35 <= customer.age <= 44:
+            age_group_counts["35-44"] += 1
+
+        elif customer.age >= 45:
+            age_group_counts["45+"] += 1
+
+
+    dominant_age_group = max(
+        age_group_counts,
+        key=age_group_counts.get
+    )
+
+
+    location_result = (
+        db.query(
+            Customer.location,
+            func.count(Customer.id)
+        )
+        .filter(
+            Customer.role == "customer"
+        )
+        .group_by(
+            Customer.location
+        )
+        .order_by(
+            func.count(Customer.id).desc()
+        )
+        .first()
+    )
+
+
+    dominant_location = None
+
+    if location_result:
+
+        dominant_location = {
+            "location": location_result[0],
+            "customers": int(
+                location_result[1]
+            )
+        }
+
+    # RULE-BASED BUSINESS INSIGHTS
+
+    insights = []
+
+
+    # Inventory rule
+    if len(out_of_stock_products) > 0:
+
+        insights.append(
+            {
+                "type": "inventory",
+                "priority": "High",
+                "title": "Out-of-stock products require attention",
+                "message": (
+                    f"{len(out_of_stock_products)} "
+                    "product(s) currently have zero stock. "
+                    "Restocking should be prioritized."
+                )
+            }
+        )
+
+
+    elif len(low_stock_products) > 0:
+
+        insights.append(
+            {
+                "type": "inventory",
+                "priority": "Medium",
+                "title": "Low stock products detected",
+                "message": (
+                    f"{len(low_stock_products)} "
+                    "product(s) are at or below their reorder level."
+                )
+            }
+        )
+
+
+    # Sales rule
+    if top_product:
+
+        insights.append(
+            {
+                "type": "sales",
+                "priority": "Info",
+                "title": "Top selling product",
+                "message": (
+                    f"{top_product['name']} is currently "
+                    f"the most purchased product with "
+                    f"{top_product['units_sold']} unit(s) sold."
+                )
+            }
+        )
+
+
+    # Category rule
+    if top_category:
+
+        insights.append(
+            {
+                "type": "sales",
+                "priority": "Info",
+                "title": "Strongest product category",
+                "message": (
+                    f"{top_category['category']} is currently "
+                    f"the leading category with "
+                    f"{top_category['units_sold']} unit(s) sold."
+                )
+            }
+        )
+
+
+    # Customer rule
+    if top_customer:
+
+        insights.append(
+            {
+                "type": "customer",
+                "priority": "Info",
+                "title": "Highest-spending customer",
+                "message": (
+                    f"{top_customer['name']} has generated "
+                    f"Rs. {top_customer['spending']:,.2f} "
+                    "from completed orders."
+                )
+            }
+        )
+
+
+    # Demographic rule
+    if total_customers > 0:
+
+        insights.append(
+            {
+                "type": "customer",
+                "priority": "Info",
+                "title": "Largest customer age segment",
+                "message": (
+                    f"The {dominant_age_group} age group "
+                    "currently represents the largest customer segment."
+                )
+            }
+        )
+
+    # FINAL RESPONSE
+    return {
+
+        "summary": {
+
+            "total_products": total_products,
+
+            "low_stock": len(
+                low_stock_products
+            ),
+
+            "out_of_stock": len(
+                out_of_stock_products
+            ),
+
+            "total_revenue": float(
+                total_revenue
+            ),
+
+            "total_orders": total_orders,
+
+            "average_order_value": float(
+                average_order_value
+            ),
+
+            "total_units_sold": int(
+                total_units_sold
+            ),
+
+            "total_customers": total_customers,
+
+            "active_buyers": int(
+                active_buyers or 0
+            )
+
+        },
+
+
+        "inventory": {
+
+            "out_of_stock": [
+                {
+                    "name": product.name,
+                    "stock": product.stock_quantity,
+                    "reorder_level": product.reorder_level
+                }
+                for product in out_of_stock_products
+            ],
+
+            "low_stock": [
+                {
+                    "name": product.name,
+                    "stock": product.stock_quantity,
+                    "reorder_level": product.reorder_level
+                }
+                for product in low_stock_products
+            ],
+
+            "reorder_recommendations":
+                reorder_recommendations
+
+        },
+
+
+        "sales": {
+
+            "top_product": top_product,
+
+            "top_category": top_category
+
+        },
+
+
+        "customers": {
+
+            "top_customer": top_customer,
+
+            "dominant_age_group":
+                dominant_age_group,
+
+            "dominant_location":
+                dominant_location
+
+        },
+
+
+        "insights": insights
+
+    }
+
+@app.get("/admin/users")
+def get_admin_users(
+    db: Session = Depends(get_db),
+    current_user: Customer = Depends(get_current_user)
+):
+
+    # Only Admin can manage users
+    if current_user.role != "admin":
+        raise HTTPException(
+            status_code=403,
+            detail="Only administrators can manage users."
+        )
+
+    users = (
+        db.query(Customer)
+        .order_by(Customer.role, Customer.name)
+        .all()
+    )
+
+    return users
+
+#admin can create users
+@app.post("/admin/users")
+def create_admin_user(
+    user_data: AdminUserCreate,
+    db: Session = Depends(get_db),
+    current_user: Customer = Depends(get_current_user)
+):
+
+    # Only Admin can add users
+    if current_user.role != "admin":
+        raise HTTPException(
+            status_code=403,
+            detail="Only administrators can add users."
+        )
+
+
+    # Validate role
+    allowed_roles = [
+        "customer",
+        "employee",
+        "admin"
+    ]
+
+    if user_data.role not in allowed_roles:
+        raise HTTPException(
+            status_code=400,
+            detail="Invalid role."
+        )
+
+
+    # Check duplicate email
+    existing_user = (
+        db.query(Customer)
+        .filter(
+            Customer.email == user_data.email
+        )
+        .first()
+    )
+
+    if existing_user:
+        raise HTTPException(
+            status_code=400,
+            detail="Email already registered."
+        )
+
+
+    # Hash password before storing
+    hashed_password = hash_password(
+        user_data.password
+    )
+
+
+    # Create new user
+    new_user = Customer(
+        name=user_data.name,
+        email=user_data.email,
+        password=hashed_password,
+        role=user_data.role,
+        age=user_data.age,
+        gender=user_data.gender,
+        location=user_data.location
+    )
+
+
+    db.add(new_user)
+    db.commit()
+    db.refresh(new_user)
+
+
+    return {
+        "message": "User created successfully.",
+        "id": new_user.id,
+        "name": new_user.name,
+        "email": new_user.email,
+        "role": new_user.role,
+        "age": new_user.age,
+        "gender": new_user.gender,
+        "location": new_user.location
+    }
+
+#edit user endpoints
+@app.put("/admin/users/{user_id}")
+def update_admin_user(
+    user_id: int,
+    user_data: AdminUserCreate,
+    db: Session = Depends(get_db),
+    current_user: Customer = Depends(get_current_user)
+):
+
+    # Only Admin can edit users
+    if current_user.role != "admin":
+        raise HTTPException(
+            status_code=403,
+            detail="Only administrators can edit users."
+        )
+
+
+    # Find user
+    user = (
+        db.query(Customer)
+        .filter(Customer.id == user_id)
+        .first()
+    )
+
+    if user is None:
+        raise HTTPException(
+            status_code=404,
+            detail="User not found."
+        )
+
+
+    # Validate role
+    allowed_roles = [
+        "customer",
+        "employee",
+        "admin"
+    ]
+
+    if user_data.role not in allowed_roles:
+        raise HTTPException(
+            status_code=400,
+            detail="Invalid role."
+        )
+
+
+    # Check whether email belongs to another user
+    existing_user = (
+        db.query(Customer)
+        .filter(
+            Customer.email == user_data.email,
+            Customer.id != user_id
+        )
+        .first()
+    )
+
+    if existing_user:
+        raise HTTPException(
+            status_code=400,
+            detail="Email already registered by another user."
+        )
+
+
+    # Update basic information
+    user.name = user_data.name
+    user.email = user_data.email
+    user.role = user_data.role
+    user.age = user_data.age
+    user.gender = user_data.gender
+    user.location = user_data.location
+
+
+    # Only replace password if Admin provides one
+    if user_data.password:
+        user.password = hash_password(
+            user_data.password
+        )
+
+
+    db.commit()
+    db.refresh(user)
+
+
+    return {
+        "message": "User updated successfully.",
+        "id": user.id,
+        "name": user.name,
+        "email": user.email,
+        "role": user.role,
+        "age": user.age,
+        "gender": user.gender,
+        "location": user.location
+    }
+
+#delete user endpoint
+@app.delete("/admin/users/{user_id}")
+def delete_admin_user(
+    user_id: int,
+    db: Session = Depends(get_db),
+    current_user: Customer = Depends(get_current_user)
+):
+
+    # Only Admin can delete users
+    if current_user.role != "admin":
+        raise HTTPException(
+            status_code=403,
+            detail="Only administrators can delete users."
+        )
+
+
+    # Prevent Admin from deleting their own account
+    if user_id == current_user.id:
+        raise HTTPException(
+            status_code=400,
+            detail="You cannot delete your own account."
+        )
+
+
+    # Find user
+    user = (
+        db.query(Customer)
+        .filter(Customer.id == user_id)
+        .first()
+    )
+
+    if user is None:
+        raise HTTPException(
+            status_code=404,
+            detail="User not found."
+        )
+
+
+    db.delete(user)
+    db.commit()
+
+
+    return {
+        "message": "User deleted successfully."
     }

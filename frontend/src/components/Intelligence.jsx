@@ -1,26 +1,67 @@
-//rule based intelligence feature for now
 import { useEffect, useState } from "react";
+
+import {
+  Package,
+  AlertTriangle,
+  CircleDollarSign,
+  ShoppingBag,
+  Users,
+  MapPin,
+  TrendingUp,
+  Lightbulb,
+  RefreshCw,
+} from "lucide-react";
+
 
 function Intelligence() {
 
-  const [products, setProducts] = useState([]);
+  // =========================================================
+  // STATE
+  // =========================================================
+
+  // Stores the complete intelligence API response
+  const [intelligenceData, setIntelligenceData] =
+    useState(null);
+
+  // Loading state
   const [loading, setLoading] = useState(true);
+
+  // Error message
   const [message, setMessage] = useState("");
+
+
+  // =========================================================
+  // FETCH INTELLIGENCE DATA
+  // =========================================================
 
   const fetchIntelligence = async () => {
 
     try {
 
-      const token = localStorage.getItem("access_token");
+      // Get JWT token
+      const token =
+        localStorage.getItem("access_token");
 
+
+      // Make sure user is logged in
       if (!token) {
-        setMessage("Please login to view intelligence.");
+
+        setMessage(
+          "Please login to view intelligence."
+        );
+
         setLoading(false);
+
         return;
       }
 
+
+      // -----------------------------------------------------
+      // REQUEST INTELLIGENCE DATA FROM FASTAPI
+      // -----------------------------------------------------
+
       const response = await fetch(
-        "http://127.0.0.1:8000/intelligence",
+        "http://127.0.0.1:8000/dashboard/intelligence",
         {
           headers: {
             Authorization: `Bearer ${token}`,
@@ -28,19 +69,36 @@ function Intelligence() {
         }
       );
 
+
+      // Convert response into JavaScript
       const data = await response.json();
 
+
+      // Check API response
       if (!response.ok) {
-        setMessage(data.detail || "Unable to load intelligence.");
+
+        setMessage(
+          data.detail ||
+          "Unable to load intelligence data."
+        );
+
         return;
       }
 
-      setProducts(data);
+
+      // Save intelligence response
+      setIntelligenceData(data);
 
     } catch (error) {
 
-      console.error("Intelligence error:", error);
-      setMessage("Unable to connect to server.");
+      console.error(
+        "Intelligence error:",
+        error
+      );
+
+      setMessage(
+        "Unable to connect to server."
+      );
 
     } finally {
 
@@ -49,143 +107,762 @@ function Intelligence() {
     }
   };
 
+
+  // =========================================================
+  // LOAD DATA
+  // =========================================================
+
   useEffect(() => {
+
     fetchIntelligence();
+
   }, []);
 
-  const productsNeedingAttention = products.length;
 
-  const totalSuggestedReorder = products.reduce(
-    (total, product) =>
-      total + product.suggested_reorder_quantity,
-    0
-  );
+  // =========================================================
+  // LOADING STATE
+  // =========================================================
 
   if (loading) {
+
     return (
-      <div className="p-8">
-        <p className="text-gray-500">
+      <div className="py-10">
+
+        <p className="text-sm text-slate-500">
           Loading intelligence data...
         </p>
+
       </div>
     );
+
   }
+
+
+  // =========================================================
+  // ERROR STATE
+  // =========================================================
 
   if (message) {
+
     return (
-      <div className="p-8">
-        <p className="text-red-500">
+      <div className="rounded-2xl border border-red-200 bg-red-50 p-6">
+
+        <p className="text-sm text-red-600">
           {message}
         </p>
+
       </div>
     );
+
   }
 
+
+  // =========================================================
+  // SAFETY CHECK
+  // =========================================================
+
+  if (!intelligenceData) {
+    return null;
+  }
+
+
+  // =========================================================
+  // SHORT VARIABLES FOR EASIER READING
+  // =========================================================
+
+  const summary =
+    intelligenceData.summary;
+
+  const inventory =
+    intelligenceData.inventory;
+
+  const sales =
+    intelligenceData.sales;
+
+  const customers =
+    intelligenceData.customers;
+
+  const insights =
+    intelligenceData.insights;
+
+
+  // =========================================================
+  // MAIN PAGE
+  // =========================================================
+
   return (
-    <div className="p-8">
 
-      <div className="mb-8">
+    <div className="space-y-8">
 
-       <p className="text-sm tracking-[0.25em] text-gray-500">
-          INTELLIGENCE
+
+      {/* =====================================================
+          PAGE HEADER
+          ===================================================== */}
+
+      <div>
+
+        <p className="text-xs font-semibold uppercase tracking-[0.25em] text-indigo-600">
+          Intelligence
         </p>
 
-        <h1 className="mt-2 text-3xl font-semibold text-gray-900">
-          Sales & Inventory Intelligence
+        <h1 className="mt-2 text-3xl font-semibold tracking-tight text-slate-900">
+          Business Intelligence
         </h1>
 
-        <p className="mt-2 text-gray-500">
-          Use historical business data to support better decisions.
+        <p className="mt-2 max-w-3xl text-sm leading-6 text-slate-500">
+          Combine inventory, sales, and customer data to
+          identify important patterns and support better
+          business decisions.
         </p>
 
       </div>
 
-      <div className="grid grid-cols-1 gap-6 md:grid-cols-2">
 
-        <div className="rounded-2xl border border-gray-200 bg-white p-6">
+      {/* =====================================================
+          SUMMARY CARDS
+          ===================================================== */}
 
-          <p className="text-sm text-gray-500">
-            Products Needing Attention
-          </p>
+      <div className="grid gap-5 sm:grid-cols-2 xl:grid-cols-4">
 
-          <p className="mt-2 text-3xl font-semibold">
-            {productsNeedingAttention}
-          </p>
 
-        </div>
+        {/* PRODUCTS */}
 
-        <div className="rounded-2xl border border-gray-200 bg-white p-6">
+        <div className="rounded-2xl border border-slate-200 bg-white p-6 shadow-sm transition duration-200 hover:-translate-y-0.5 hover:shadow-md">
 
-          <p className="text-sm text-gray-500">
-            Suggested Reorder Units
-          </p>
+          <div className="flex items-start justify-between">
 
-          <p className="mt-2 text-3xl font-semibold">
-            {totalSuggestedReorder}
-          </p>
+            <div>
 
-        </div>
+              <p className="text-sm font-medium text-slate-500">
+                Products
+              </p>
 
-      </div>
+              <p className="mt-3 text-2xl font-semibold text-slate-900">
+                {summary.total_products}
+              </p>
 
-      <div className="mt-8 rounded-2xl border border-gray-200 bg-white p-6">
+              <p className="mt-2 text-xs text-slate-400">
+                Products in inventory
+              </p>
 
-        <h3 className="mb-6 text-lg font-semibold">
-          Reorder Recommendations
-        </h3>
+            </div>
 
-        {products.length === 0 ? (
+            <div className="rounded-xl bg-indigo-50 p-3 text-indigo-600">
 
-          <p className="text-sm text-gray-500">
-            No products currently require restocking.
-          </p>
+              <Package size={20} />
 
-        ) : (
-
-          <div className="space-y-4">
-
-            {products.map((product) => (
-
-              <div
-                key={product.id}
-                className="flex items-center justify-between border-b border-gray-100 pb-4 last:border-0"
-              >
-
-                <div>
-
-                  <p className="font-medium text-gray-900">
-                    {product.name}
-                  </p>
-
-                  <p className="mt-1 text-sm text-gray-500">
-                    Current stock: {product.stock_quantity}
-                  </p>
-
-                  <p className="text-sm text-gray-500">
-                    Reorder level: {product.reorder_level}
-                  </p>
-
-                </div>
-
-                <div className="text-right">
-
-                  <p className="font-medium text-gray-900">
-                    Reorder {product.suggested_reorder_quantity}
-                  </p>
-
-                  <p className="text-xs text-gray-500">
-                    units suggested
-                  </p>
-
-                </div>
-
-              </div>
-
-            ))}
+            </div>
 
           </div>
 
-        )}
+        </div>
+
+
+        {/* REVENUE */}
+
+        <div className="rounded-2xl border border-slate-200 bg-white p-6 shadow-sm transition duration-200 hover:-translate-y-0.5 hover:shadow-md">
+
+          <div className="flex items-start justify-between">
+
+            <div>
+
+              <p className="text-sm font-medium text-slate-500">
+                Revenue
+              </p>
+
+              <p className="mt-3 text-2xl font-semibold text-slate-900">
+
+                Rs.{" "}
+
+                {Number(
+                  summary.total_revenue
+                ).toLocaleString()}
+
+              </p>
+
+              <p className="mt-2 text-xs text-slate-400">
+                From completed sales
+              </p>
+
+            </div>
+
+            <div className="rounded-xl bg-emerald-50 p-3 text-emerald-600">
+
+              <CircleDollarSign size={20} />
+
+            </div>
+
+          </div>
+
+        </div>
+
+
+        {/* ORDERS */}
+
+        <div className="rounded-2xl border border-slate-200 bg-white p-6 shadow-sm transition duration-200 hover:-translate-y-0.5 hover:shadow-md">
+
+          <div className="flex items-start justify-between">
+
+            <div>
+
+              <p className="text-sm font-medium text-slate-500">
+                Customer Orders
+              </p>
+
+              <p className="mt-3 text-2xl font-semibold text-slate-900">
+                {summary.total_orders}
+              </p>
+
+              <p className="mt-2 text-xs text-slate-400">
+                Completed orders
+              </p>
+
+            </div>
+
+            <div className="rounded-xl bg-blue-50 p-3 text-blue-600">
+
+              <ShoppingBag size={20} />
+
+            </div>
+
+          </div>
+
+        </div>
+
+
+        {/* ACTIVE BUYERS */}
+
+        <div className="rounded-2xl border border-slate-200 bg-white p-6 shadow-sm transition duration-200 hover:-translate-y-0.5 hover:shadow-md">
+
+          <div className="flex items-start justify-between">
+
+            <div>
+
+              <p className="text-sm font-medium text-slate-500">
+                Active Buyers
+              </p>
+
+              <p className="mt-3 text-2xl font-semibold text-slate-900">
+                {summary.active_buyers}
+              </p>
+
+              <p className="mt-2 text-xs text-slate-400">
+                Customers with completed orders
+              </p>
+
+            </div>
+
+            <div className="rounded-xl bg-violet-50 p-3 text-violet-600">
+
+              <Users size={20} />
+
+            </div>
+
+          </div>
+
+        </div>
+
+      </div>
+
+
+      {/* =====================================================
+          BUSINESS INSIGHTS
+          ===================================================== */}
+
+      <section>
+
+        <div className="mb-5">
+
+          <p className="text-xs font-semibold uppercase tracking-[0.2em] text-amber-600">
+            Analysis
+          </p>
+
+          <h2 className="mt-2 text-2xl font-semibold text-slate-900">
+            Business Insights
+          </h2>
+
+          <p className="mt-1 text-sm text-slate-500">
+            Important findings generated from your current
+            business data.
+          </p>
+
+        </div>
+
+
+        <div className="grid gap-5">
+
+          {insights.length === 0 ? (
+
+            <div className="rounded-2xl border border-slate-200 bg-white p-8">
+
+              <p className="text-sm text-slate-500">
+                No significant insights available right now.
+              </p>
+
+            </div>
+
+          ) : (
+
+            insights.map((insight, index) => {
+
+              let icon = Lightbulb;
+
+              let iconStyle =
+                "bg-slate-100 text-slate-600";
+
+              let priorityStyle =
+                "bg-slate-100 text-slate-600";
+
+
+              // Inventory insight
+              if (insight.type === "inventory") {
+
+                icon = AlertTriangle;
+
+                iconStyle =
+                  "bg-red-50 text-red-600";
+
+                priorityStyle =
+                  insight.priority === "High"
+                    ? "bg-red-50 text-red-700"
+                    : "bg-amber-50 text-amber-700";
+              }
+
+
+              // Sales insight
+              if (insight.type === "sales") {
+
+                icon = TrendingUp;
+
+                iconStyle =
+                  "bg-blue-50 text-blue-600";
+
+                priorityStyle =
+                  "bg-blue-50 text-blue-700";
+              }
+
+
+              // Customer insight
+              if (insight.type === "customer") {
+
+                icon = Users;
+
+                iconStyle =
+                  "bg-violet-50 text-violet-600";
+
+                priorityStyle =
+                  "bg-violet-50 text-violet-700";
+              }
+
+
+              const InsightIcon = icon;
+
+
+              return (
+
+                <div
+                  key={index}
+                  className="rounded-2xl border border-slate-200 bg-white p-5 shadow-sm"
+                >
+
+                  <div className="flex items-start gap-4">
+
+
+                    <div
+                      className={`rounded-xl p-3 ${iconStyle}`}
+                    >
+
+                      <InsightIcon size={20} />
+
+                    </div>
+
+
+                    <div className="min-w-0 flex-1">
+
+                      <div className="flex flex-wrap items-center gap-2">
+
+                        <h3 className="font-semibold text-slate-900">
+                          {insight.title}
+                        </h3>
+
+                        <span
+                          className={`rounded-full px-2.5 py-1 text-xs font-medium ${priorityStyle}`}
+                        >
+                          {insight.priority}
+                        </span>
+
+                      </div>
+
+                      <p className="mt-2 text-sm leading-6 text-slate-600">
+                        {insight.message}
+                      </p>
+
+                    </div>
+
+                  </div>
+
+                </div>
+
+              );
+
+            })
+
+          )}
+
+        </div>
+
+      </section>
+
+
+      {/* =====================================================
+          INVENTORY INTELLIGENCE
+          ===================================================== */}
+
+      <section>
+
+        <div className="mb-5">
+
+          <p className="text-xs font-semibold uppercase tracking-[0.2em] text-red-600">
+            Inventory Intelligence
+          </p>
+
+          <h2 className="mt-2 text-2xl font-semibold text-slate-900">
+            Restocking Recommendations
+          </h2>
+
+          <p className="mt-1 text-sm text-slate-500">
+            Products that require attention based on current
+            stock and reorder levels.
+          </p>
+
+        </div>
+
+
+        <div className="overflow-hidden rounded-2xl border border-slate-200 bg-white shadow-sm">
+
+          <div className="overflow-x-auto">
+
+            <table className="min-w-full text-sm">
+
+              <thead className="bg-slate-50 text-left text-xs uppercase tracking-wide text-slate-500">
+
+                <tr>
+
+                  <th className="px-6 py-4 font-semibold">
+                    Product
+                  </th>
+
+                  <th className="px-6 py-4 font-semibold">
+                    Current Stock
+                  </th>
+
+                  <th className="px-6 py-4 font-semibold">
+                    Reorder Level
+                  </th>
+
+                  <th className="px-6 py-4 font-semibold">
+                    Suggested Reorder
+                  </th>
+
+                  <th className="px-6 py-4 font-semibold">
+                    Priority
+                  </th>
+
+                </tr>
+
+              </thead>
+
+
+              <tbody className="divide-y divide-slate-100">
+
+                {inventory.reorder_recommendations
+                  .map((product) => (
+
+                    <tr
+                      key={product.product_name}
+                      className="transition hover:bg-slate-50"
+                    >
+
+                      <td className="px-6 py-4 font-medium text-slate-900">
+                        {product.product_name}
+                      </td>
+
+                      <td className="px-6 py-4 text-slate-600">
+                        {product.current_stock}
+                      </td>
+
+                      <td className="px-6 py-4 text-slate-600">
+                        {product.reorder_level}
+                      </td>
+
+                      <td className="px-6 py-4 font-semibold text-slate-900">
+                        {product.suggested_reorder}
+                      </td>
+
+                      <td className="px-6 py-4">
+
+                        <span
+                          className={`inline-flex rounded-full px-3 py-1 text-xs font-medium ${
+                            product.priority === "High"
+                              ? "bg-red-50 text-red-700"
+                              : "bg-amber-50 text-amber-700"
+                          }`}
+                        >
+
+                          {product.priority}
+
+                        </span>
+
+                      </td>
+
+                    </tr>
+
+                  ))}
+
+              </tbody>
+
+            </table>
+
+          </div>
+
+        </div>
+
+      </section>
+
+
+      {/* =====================================================
+          SALES + CUSTOMER INTELLIGENCE
+          ===================================================== */}
+
+      <div className="grid gap-6 lg:grid-cols-2">
+
+
+        {/* SALES */}
+
+        <div className="rounded-2xl border border-slate-200 bg-white p-6 shadow-sm">
+
+          <div className="mb-6">
+
+            <div className="flex items-center gap-3">
+
+              <div className="rounded-xl bg-blue-50 p-3 text-blue-600">
+
+                <TrendingUp size={20} />
+
+              </div>
+
+              <div>
+
+                <h2 className="text-lg font-semibold text-slate-900">
+                  Sales Intelligence
+                </h2>
+
+                <p className="text-sm text-slate-500">
+                  Strongest sales indicators.
+                </p>
+
+              </div>
+
+            </div>
+
+          </div>
+
+
+          <div className="space-y-4">
+
+
+            {/* TOP PRODUCT */}
+
+            {sales.top_product && (
+
+              <div className="rounded-xl bg-blue-50 p-4">
+
+                <p className="text-xs font-semibold uppercase tracking-wide text-blue-600">
+                  Top Product
+                </p>
+
+                <p className="mt-2 font-semibold text-slate-900">
+                  {sales.top_product.name}
+                </p>
+
+                <p className="mt-1 text-sm text-slate-600">
+                  {sales.top_product.units_sold} units sold
+                </p>
+
+              </div>
+
+            )}
+
+
+            {/* TOP CATEGORY */}
+
+            {sales.top_category && (
+
+              <div className="rounded-xl bg-emerald-50 p-4">
+
+                <p className="text-xs font-semibold uppercase tracking-wide text-emerald-600">
+                  Top Category
+                </p>
+
+                <p className="mt-2 font-semibold text-slate-900">
+                  {sales.top_category.category}
+                </p>
+
+                <p className="mt-1 text-sm text-slate-600">
+                  {sales.top_category.units_sold} units sold
+                </p>
+
+              </div>
+
+            )}
+
+          </div>
+
+        </div>
+
+
+        {/* CUSTOMERS */}
+
+        <div className="rounded-2xl border border-slate-200 bg-white p-6 shadow-sm">
+
+          <div className="mb-6">
+
+            <div className="flex items-center gap-3">
+
+              <div className="rounded-xl bg-violet-50 p-3 text-violet-600">
+
+                <Users size={20} />
+
+              </div>
+
+              <div>
+
+                <h2 className="text-lg font-semibold text-slate-900">
+                  Customer Intelligence
+                </h2>
+
+                <p className="text-sm text-slate-500">
+                  Strongest customer indicators.
+                </p>
+
+              </div>
+
+            </div>
+
+          </div>
+
+
+          <div className="space-y-4">
+
+
+            {/* TOP CUSTOMER */}
+
+            {customers.top_customer && (
+
+              <div className="rounded-xl bg-violet-50 p-4">
+
+                <p className="text-xs font-semibold uppercase tracking-wide text-violet-600">
+                  Highest-Spending Customer
+                </p>
+
+                <p className="mt-2 font-semibold text-slate-900">
+                  {customers.top_customer.name}
+                </p>
+
+                <p className="mt-1 text-sm text-slate-600">
+                  Rs.{" "}
+                  {Number(
+                    customers.top_customer.spending
+                  ).toLocaleString()}
+                </p>
+
+              </div>
+
+            )}
+
+
+            {/* AGE GROUP */}
+
+            <div className="rounded-xl bg-orange-50 p-4">
+
+              <p className="text-xs font-semibold uppercase tracking-wide text-orange-600">
+                Largest Age Segment
+              </p>
+
+              <p className="mt-2 font-semibold text-slate-900">
+                {customers.dominant_age_group}
+              </p>
+
+            </div>
+
+
+            {/* LOCATION */}
+
+            {customers.dominant_location && (
+
+              <div className="rounded-xl bg-pink-50 p-4">
+
+                <div className="flex items-center gap-2">
+
+                  <MapPin
+                    size={16}
+                    className="text-pink-600"
+                  />
+
+                  <p className="text-xs font-semibold uppercase tracking-wide text-pink-600">
+                    Dominant Location
+                  </p>
+
+                </div>
+
+                <p className="mt-2 font-semibold text-slate-900">
+                  {customers.dominant_location.location}
+                </p>
+
+                <p className="mt-1 text-sm text-slate-600">
+                  {customers.dominant_location.customers} customer
+                  {customers.dominant_location.customers !== 1
+                    ? "s"
+                    : ""}
+                </p>
+
+              </div>
+
+            )}
+
+          </div>
+
+        </div>
+
+      </div>
+
+
+      {/* =====================================================
+          DATA REFRESH NOTE
+          ===================================================== */}
+
+      <div className="flex items-start gap-3 rounded-2xl border border-slate-200 bg-slate-50 p-5">
+
+        <div className="rounded-lg bg-white p-2 text-slate-600 shadow-sm">
+
+          <RefreshCw size={18} />
+
+        </div>
+
+        <div>
+
+          <p className="text-sm font-medium text-slate-800">
+            Intelligence is data-driven
+          </p>
+
+          <p className="mt-1 text-sm leading-6 text-slate-500">
+            These insights are generated from the current
+            inventory, sales, and customer records. As new
+            purchases and customer data are added, the analysis
+            automatically changes.
+          </p>
+
+        </div>
 
       </div>
 
