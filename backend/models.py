@@ -1,4 +1,4 @@
-from sqlalchemy import Column, Integer, String, Float, Text, ForeignKey, DateTime
+from sqlalchemy import Column, Integer, String, Float, Text, ForeignKey, DateTime, Date
 from database import Base
 from datetime import datetime
 
@@ -73,7 +73,7 @@ class Customer(Base): #creates database model called customer
         String(100),
         nullable=True
     )
-
+    date_of_birth = Column(Date, nullable=True)
 
 class Sale(Base):
     __tablename__ = "sales"

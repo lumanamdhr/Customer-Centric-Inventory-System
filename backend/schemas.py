@@ -1,4 +1,5 @@
 from pydantic import BaseModel
+from datetime import date
 
 class ProductCreate(BaseModel):
     name: str
@@ -34,6 +35,9 @@ class CustomerCreate(BaseModel):
     name: str
     email: str
     password: str
+    date_of_birth: date
+    gender: str
+    location: str
 
 class CustomerResponse(BaseModel):
     id: int

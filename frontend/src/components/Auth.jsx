@@ -24,6 +24,9 @@ function Auth({
   const [signupEmail, setSignupEmail] = useState("");
   const [signupPassword, setSignupPassword] = useState("");
   const [confirmPassword, setConfirmPassword] = useState("");
+  const [dateOfBirth, setDateOfBirth] = useState("");
+  const [gender, setGender] = useState("");
+  const [location, setLocation] = useState("");
 
   // Password visibility
   const [showPassword, setShowPassword] = useState(false);
@@ -177,6 +180,9 @@ function Auth({
             name: fullName,
             email: signupEmail,
             password: signupPassword,
+            date_of_birth: dateOfBirth,
+            gender: gender,
+            location: location,
           }),
         }
       );
@@ -485,6 +491,67 @@ function Auth({
 
                 </div>
 
+                {/**Date of Birth */}
+                <div>
+                  <label className="mb-2 block text-sm font-medium text-gray-700">
+                    Date of Birth
+                  </label>
+
+                  <input
+                    type="date"
+                    name="dateOfBirth"
+                    value={dateOfBirth}
+                    onChange={(event) =>
+                      setDateOfBirth(event.target.value)
+                    }
+                    required
+                    className="w-full rounded-xl border border-stone-200 bg-stone-50 px-4 py-3 text-sm outline-none transition focus:border-rose-300 focus:bg-white"
+                  />
+                </div>
+                
+                {/**Gender */}
+                <div>
+                  <label className="mb-2 block text-sm font-medium text-gray-700">
+                    Gender
+                  </label>
+
+                  <select
+                    name="gender"
+                    value={gender}
+                    onChange={(event) =>
+                      setGender(event.target.value)
+                    }
+                    required
+                    className="w-full rounded-xl border border-stone-200 bg-stone-50 px-4 py-3 text-sm outline-none transition focus:border-rose-300 focus:bg-white"
+                  >
+                    <option value="">Select gender</option>
+                    <option value="Female">Female</option>
+                    <option value="Male">Male</option>
+                    <option value="Other">Other</option>
+                    <option value="Prefer not to say">
+                      Prefer not to say
+                    </option>
+                  </select>
+                </div>
+
+                {/**Location */}
+                <div>
+                  <label className="mb-2 block text-sm font-medium text-gray-700">
+                    Location
+                  </label>
+
+                  <input
+                    type="text"
+                    name="location"
+                    value={location}
+                    onChange={(event) =>
+                      setLocation(event.target.value)
+                    }
+                    placeholder="Enter your city"
+                    required
+                    className="w-full rounded-xl border border-stone-200 bg-stone-50 px-4 py-3 text-sm outline-none transition focus:border-rose-300 focus:bg-white"
+                  />
+                </div>
 
                 {/* Email */}
                 <div>

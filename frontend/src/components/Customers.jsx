@@ -915,15 +915,15 @@ function Customers() {
                   </td>
 
                   <td className="px-6 py-4 text-slate-600">
-                    {customer.age}
+                    {customer.age ?? "-"}
                   </td>
 
                   <td className="px-6 py-4 text-slate-600">
-                    {customer.gender}
+                    {customer.gender ?? "-"}
                   </td>
 
                   <td className="px-6 py-4 text-slate-600">
-                    {customer.location}
+                    {customer.location ?? "-"}
                   </td>
 
                   <td className="px-6 py-4 text-slate-600">

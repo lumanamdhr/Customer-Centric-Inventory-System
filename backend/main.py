@@ -9,6 +9,8 @@ import os
 import uuid
 from pathlib import Path
 
+from datetime import date
+
 from database import engine, get_db ,Base #import engine and base we created in db.py
 from models import Product,Customer, Cart, CartItem, Sale, SaleItem
 from schemas import (
@@ -36,6 +38,19 @@ from security import (
     require_role
 )
 
+def calculate_age(date_of_birth: date) -> int:
+    today = date.today()
+
+    age = today.year - date_of_birth.year
+
+    if (
+        (today.month, today.day)
+        < (date_of_birth.month, date_of_birth.day)
+    ):
+        age -= 1
+
+    return age
+
 app = FastAPI()
 
 # Serve product images from backend/static/
@@ -49,6 +64,7 @@ app.add_middleware(
     allow_headers=["*"], #allows frontend to send HTTP headers
 )
 Base.metadata.create_all(bind=engine) #scans all the models that inherit from base and creates their database if they don't exist
+
 
 @app.get("/")
 def root():
@@ -439,11 +455,18 @@ def create_customer(
 
     hashed_password = hash_password(customer.password)
 
+    calculated_age = calculate_age(
+        customer.date_of_birth
+    )
+
     new_customer = Customer(
         name=customer.name,
         email=customer.email,
         password=hashed_password,
-        role="customer"
+        role="customer",
+        date_of_birth=customer.date_of_birth,
+        gender=customer.gender,
+        location=customer.location
     )
 
     db.add(new_customer)
