@@ -1,6 +1,8 @@
 /*remove click garda cart ma number 0 dekhako xaina*/
 import { useState, useEffect } from "react"; /**useEffect lets us run the API request when the homepage loads */
 
+import { Check } from "lucide-react";
+
 import Navbar from "./components/Navbar";
 import Hero from "./components/Hero";
 import ProductSection from "./components/ProductSection";
@@ -31,6 +33,8 @@ function App() {
   // Keeps track of the number shown on the cart icon
   const [cartCount, setCartCount] = useState(0);
 
+  //for messges added to cart
+  const [toastMessage, setToastMessage] = useState("");
 
   const [isLoggedIn, setIsLoggedIn] = useState(
   !!localStorage.getItem("access_token") //!!token=ture if !!null=false
@@ -95,6 +99,12 @@ function App() {
     console.log("Added to cart:", data);
 
     await fetchCartCount();
+
+    setToastMessage("Product added to cart");
+
+    setTimeout(() => {
+      setToastMessage("");
+    }, 2500);
 
   } catch (error) {
 
@@ -263,6 +273,7 @@ return (
 
       {/*shows shop page */}
       {currentPage === "shop" && (
+        <>
         <Shop
           onAddToCart={handleAddToCart}
           onViewDetails={handleViewDetails}
@@ -270,6 +281,33 @@ return (
           searchTerm={searchTerm}
           onClearSearch={handleClearSearch}
         />
+
+        <Footer
+          onNavigate={handleNavigate}
+        />
+      </>
+      )}
+
+      {/**shows features page*/}
+      {currentPage === "features" && (
+        <>
+          <Features />
+
+          <Footer
+            onNavigate={handleNavigate}
+          />
+        </>
+      )}
+
+      {/**shows about page */}
+      {currentPage === "about" && (
+        <>
+          <About />
+
+          <Footer
+            onNavigate={handleNavigate}
+          />
+        </>
       )}
 
       {/*the login sign up page */}
@@ -300,7 +338,30 @@ return (
         <DashboardLayout role={userRole} />
       )}
 
+     {toastMessage && (
+      <div className="fixed right-6 top-6 z-[200] animate-[slideIn_0.25s_ease-out]">
+        <div className="flex items-center gap-3 rounded-2xl border border-pink-200 bg-white px-5 py-4 shadow-xl">
+
+          <div className="flex h-9 w-9 items-center justify-center rounded-full bg-pink-100 text-pink-600">
+            <Check size={18} />
+          </div>
+
+          <div>
+            <p className="text-sm font-semibold text-slate-900">
+              Added to cart
+            </p>
+
+            <p className="mt-0.5 text-xs text-slate-500">
+              Product added to your cart successfully.
+            </p>
+          </div>
+
+        </div>
+      </div>
+    )}
+
       <CartDrawer
+      
         isOpen={isCartOpen}
         onClose={() => setIsCartOpen(false)}
         onCheckout={() => {

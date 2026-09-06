@@ -464,6 +464,7 @@ def create_customer(
         email=customer.email,
         password=hashed_password,
         role="customer",
+        age=calculated_age,
         date_of_birth=customer.date_of_birth,
         gender=customer.gender,
         location=customer.location

@@ -15,7 +15,7 @@ function CategorySection({ onCategoryClick }) {
       name: "Lips",
       description: "Lipsticks, glosses and liquid lip colors.",
       image:
-      "http://127.0.0.1:8000/static/products/powerplay-lipstick.webp",
+      "http://127.0.0.1:8000/static/products/powerplay-lipstick.png",
     },
     {
       name: "Eyes",
