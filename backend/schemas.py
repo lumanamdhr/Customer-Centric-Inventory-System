@@ -94,6 +94,9 @@ class SaleResponse(BaseModel):
     class Config:
         from_attributes = True
 
+class SaleStatusUpdate(BaseModel):
+    status: str
+
 class CustomerDashboardResponse(BaseModel):
     id: int
     name: str
@@ -122,3 +125,7 @@ class AdminUserCreate(BaseModel):
     age: int | None = None
     gender: str | None = None
     location: str | None = None
+
+#restock order
+class RestockRequest(BaseModel):
+    quantity: int

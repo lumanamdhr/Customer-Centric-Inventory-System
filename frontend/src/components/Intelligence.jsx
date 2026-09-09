@@ -29,6 +29,8 @@ function Intelligence() {
   // Error message
   const [message, setMessage] = useState("");
 
+  //how much to add stock
+  const [restockAmounts, setRestockAmounts] = useState({});
 
   // =========================================================
   // FETCH INTELLIGENCE DATA
@@ -107,6 +109,45 @@ function Intelligence() {
     }
   };
 
+
+  const handleRestock = async (productId) => {
+
+  const quantity = Number(restockAmounts[productId]);
+
+  if (!quantity || quantity <= 0) {
+    alert("Enter a quantity greater than zero.");
+    return;
+  }
+
+  try {
+    const token = localStorage.getItem("access_token");
+
+    const response = await fetch(
+      `http://127.0.0.1:8000/products/${productId}/restock`,
+      {
+        method: "POST",
+        headers: {
+          Authorization: `Bearer ${token}`,
+          "Content-Type": "application/json",
+        },
+        body: JSON.stringify({ quantity }),
+      }
+    );
+
+    if (!response.ok) {
+      const data = await response.json();
+      alert(data.detail || "Unable to restock.");
+      return;
+    }
+
+    setRestockAmounts((prev) => ({ ...prev, [productId]: "" }));
+    fetchIntelligence(); // refresh so the table reflects new stock
+
+  } catch (error) {
+    console.error("Restock error:", error);
+    alert("Unable to connect to server.");
+  }
+};
 
   // =========================================================
   // LOAD DATA
@@ -568,6 +609,10 @@ function Intelligence() {
                     Priority
                   </th>
 
+                  <th className="px-6 py-4 font-semibold">
+                    Restock
+                  </th>
+
                 </tr>
 
               </thead>
@@ -577,9 +622,10 @@ function Intelligence() {
 
                 {inventory.reorder_recommendations
                   .map((product) => (
+                    
 
                     <tr
-                      key={product.product_name}
+                      key={product.product_id}
                       className="transition hover:bg-slate-50"
                     >
 
@@ -614,6 +660,30 @@ function Intelligence() {
                         </span>
 
                       </td>
+                    
+                      <td className="px-6 py-4">
+                        <div className="flex items-center gap-2">
+                          <input
+                            type="number"
+                            min="1"
+                            value={restockAmounts[product.product_id] || ""}
+                            onChange={(e) =>
+                              setRestockAmounts((prev) => ({
+                                ...prev,
+                                [product.product_id]: e.target.value,
+                              }))
+                            }
+                            placeholder="Qty"
+                            className="w-16 rounded-lg border border-slate-200 px-2 py-1 text-sm"
+                          />
+                          <button
+                            onClick={() => handleRestock(product.product_id)}
+                            className="rounded-lg bg-indigo-600 px-3 py-1 text-xs font-medium text-white hover:bg-indigo-700"
+                          >
+                            Restock
+                          </button>
+                        </div>
+                      </td>
 
                     </tr>
 
@@ -629,7 +699,162 @@ function Intelligence() {
 
       </section>
 
+            {/* =====================================================
+          ABC PRODUCT CLASSIFICATION
+          ===================================================== */}
 
+      <section>
+
+        <div className="mb-5">
+
+          <p className="text-xs font-semibold uppercase tracking-[0.2em] text-red-600">
+            Inventory Intelligence
+          </p>
+
+          <h2 className="mt-2 text-2xl font-semibold text-slate-900">
+            Product Classification (ABC Analysis)
+          </h2>
+
+          <p className="mt-1 text-sm text-slate-500">
+            Products ranked by revenue contribution — Class A drives the
+            majority of revenue and deserves the most attention.
+          </p>
+
+        </div>
+
+        {/* Summary cards */}
+        <div className="mb-6 grid gap-4 sm:grid-cols-3">
+
+          {["A", "B", "C"].map((cls) => {
+
+            const classProducts = inventory.abc_classification.filter(
+              (p) => p.class === cls
+            );
+            const classRevenue = classProducts.reduce(
+              (sum, p) => sum + p.revenue, 0
+            );
+            const totalRevenue = inventory.abc_classification.reduce(
+              (sum, p) => sum + p.revenue, 0
+            );
+            const sharePercent = totalRevenue > 0
+              ? Math.round((classRevenue / totalRevenue) * 100)
+              : 0;
+
+            const styles = {
+              A: { bg: "bg-emerald-50", border: "border-emerald-200", text: "text-emerald-700", bar: "bg-emerald-500" },
+              B: { bg: "bg-amber-50", border: "border-amber-200", text: "text-amber-700", bar: "bg-amber-500" },
+              C: { bg: "bg-slate-50", border: "border-slate-200", text: "text-slate-600", bar: "bg-slate-400" },
+            }[cls];
+
+            return (
+              <div
+                key={cls}
+                className={`rounded-2xl border ${styles.border} ${styles.bg} p-5`}
+              >
+                <p className={`text-sm font-semibold ${styles.text}`}>
+                  Class {cls}
+                </p>
+                <p className="mt-2 text-2xl font-semibold text-slate-900">
+                  {classProducts.length}
+                  <span className="ml-1 text-sm font-normal text-slate-500">
+                    products
+                  </span>
+                </p>
+                <div className="mt-3 h-1.5 w-full overflow-hidden rounded-full bg-white">
+                  <div
+                    className={`h-full ${styles.bar}`}
+                    style={{ width: `${sharePercent}%` }}
+                  />
+                </div>
+                <p className="mt-2 text-xs text-slate-500">
+                  {sharePercent}% of total revenue
+                </p>
+              </div>
+            );
+          })}
+
+        </div>
+
+        <div className="overflow-hidden rounded-2xl border border-slate-200 bg-white shadow-sm">
+
+          <div className="overflow-x-auto">
+
+            <table className="min-w-full text-sm">
+
+              <thead className="bg-slate-50 text-left text-xs uppercase tracking-wide text-slate-500">
+
+                <tr>
+
+                  <th className="px-6 py-4 font-semibold">
+                    Product
+                  </th>
+
+                  <th className="px-6 py-4 font-semibold">
+                    Revenue
+                  </th>
+
+                  <th className="px-6 py-4 font-semibold">
+                    Class
+                  </th>
+
+                </tr>
+
+              </thead>
+
+              <tbody className="divide-y divide-slate-100">
+
+                {inventory.abc_classification.map((product) => {
+
+                  const borderColor = {
+                    A: "border-l-emerald-500",
+                    B: "border-l-amber-500",
+                    C: "border-l-slate-300",
+                  }[product.class];
+
+                  return (
+                    <tr
+                      key={product.product_id}
+                      className={`border-l-4 ${borderColor} transition hover:bg-slate-50`}
+                    >
+
+                      <td className="px-6 py-4 font-medium text-slate-800">
+                        {product.product_name}
+                      </td>
+
+                      <td className="px-6 py-4 text-slate-600">
+                        Rs. {product.revenue.toLocaleString()}
+                      </td>
+
+                      <td className="px-6 py-4">
+
+                        <span
+                          className={`inline-flex rounded-full px-3 py-1 text-xs font-medium ${
+                            product.class === "A"
+                              ? "bg-emerald-50 text-emerald-700"
+                              : product.class === "B"
+                              ? "bg-amber-50 text-amber-700"
+                              : "bg-slate-100 text-slate-600"
+                          }`}
+                        >
+                          Class {product.class}
+                        </span>
+
+                      </td>
+
+                    </tr>
+                  );
+                })}
+
+              </tbody>
+
+            </table>
+
+          </div>
+
+        </div>
+
+      </section>
+      
       {/* =====================================================
           SALES + CUSTOMER INTELLIGENCE
           ===================================================== */}

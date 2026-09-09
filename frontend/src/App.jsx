@@ -36,6 +36,22 @@ function App() {
   //for messges added to cart
   const [toastMessage, setToastMessage] = useState("");
 
+  //guest cart 
+  const [guestCart, setGuestCart] = useState(() => {
+  const savedCart = localStorage.getItem("guest_cart");
+
+  return savedCart
+    ? JSON.parse(savedCart)
+    : [];
+});
+
+useEffect(() => {
+  localStorage.setItem(
+    "guest_cart",
+    JSON.stringify(guestCart)
+  );
+}, [guestCart]);
+
   const [isLoggedIn, setIsLoggedIn] = useState(
   !!localStorage.getItem("access_token") //!!token=ture if !!null=false
 );
@@ -50,28 +66,65 @@ function App() {
   const [isCartOpen, setIsCartOpen] = useState(false);
  
   // Handles Add to Cart
-  const handleAddToCart = async (product, quantity=1) => { //tells which product the customer clicked
+  const handleAddToCart = async (product, quantity = 1) => {
 
   const token = localStorage.getItem("access_token");
 
-  //if not logged in, open login panel
+  // =======================================================
+  // GUEST CART
+  // =======================================================
+
   if (!token) {
-    setIsLoginOpen(true);
+
+    setGuestCart((previousCart) => {
+
+      const existingItem = previousCart.find(
+        (item) => item.id === product.id
+      );
+
+      if (existingItem) {
+
+        return previousCart.map((item) =>
+          item.id === product.id
+            ? {
+                ...item,
+                quantity:
+                  item.quantity + quantity,
+              }
+            : item
+        );
+
+      }
+
+      return [
+        ...previousCart,
+        {
+          ...product,
+          quantity,
+        },
+      ];
+    });
+
+    setCartCount((previousCount) =>
+      previousCount + quantity
+    );
+
     return;
   }
 
-  //gets the logged in customer's ID
-  const customerId = localStorage.getItem("customer_id");
+  // =======================================================
+  // LOGGED-IN CUSTOMER CART
+  // =======================================================
+
+  const customerId =
+    localStorage.getItem("customer_id");
 
   if (!customerId) {
-    setIsLoginOpen(true);
     return;
   }
 
- 
-
   try {
-    //send the selected product to FastAPI
+
     const response = await fetch(
       `http://127.0.0.1:8000/cart/${customerId}/items`,
       {
@@ -79,12 +132,12 @@ function App() {
 
         headers: {
           "Content-Type": "application/json",
+          Authorization: `Bearer ${token}`,
         },
-        
-        /**sends the product to FastAPI  */
+
         body: JSON.stringify({
           product_id: product.id,
-          quantity: quantity,
+          quantity,
         }),
       }
     );
@@ -92,15 +145,23 @@ function App() {
     const data = await response.json();
 
     if (!response.ok) {
-      console.error("Add to cart failed:", data);
+      console.error(
+        "Add to cart failed:",
+        data
+      );
       return;
     }
 
-    console.log("Added to cart:", data);
+    console.log(
+      "Added to cart:",
+      data
+    );
 
     await fetchCartCount();
 
-    setToastMessage("Product added to cart");
+    setToastMessage(
+      "Product added to cart"
+    );
 
     setTimeout(() => {
       setToastMessage("");
@@ -108,15 +169,46 @@ function App() {
 
   } catch (error) {
 
-    console.error("Add to cart error:", error);
+    console.error(
+      "Add to cart error:",
+      error
+    );
 
   }
-};
+}; 
 
 //cart count
 const fetchCartCount = async () => {
 
   const customerId = localStorage.getItem("customer_id");
+
+  const token =
+    localStorage.getItem("access_token");
+
+  // Guest cart
+  if (!token || !customerId) {
+
+    const savedCart =
+      localStorage.getItem("guest_cart");
+
+    if (!savedCart) {
+      setCartCount(0);
+      return;
+    }
+
+    const guestItems =
+      JSON.parse(savedCart);
+
+    const count =
+      guestItems.reduce(
+        (total, item) =>
+          total + item.quantity,
+        0
+      );
+
+    setCartCount(count);
+    return;
+  }
 
   if (!customerId) {
     setCartCount(0);
@@ -154,14 +246,99 @@ useEffect(() => {
 };*/
 
 //provides the respective page 
-const handleLoginSuccess = (role) => {
+const handleLoginSuccess = async (role) => {
+
   setUserRole(role);
   setIsLoggedIn(true);
-  if (role === "admin" || role === "employee") {
-    setCurrentPage("dashboard");
-  } else {
-    setCurrentPage("home");
+
+  if (role === "customer") {
+
+    await transferGuestCartToCustomer();
+
+    setCurrentPage("checkout");
+
+    return;
   }
+
+  if (
+    role === "admin" ||
+    role === "employee"
+  ) {
+    setCurrentPage("dashboard");
+    return;
+  }
+
+  setCurrentPage("home");
+};
+
+//handling the proceed to checkout
+const handleProceedToCheckout = () => {
+
+  setIsCartOpen(false);
+
+  const token =
+    localStorage.getItem("access_token");
+
+  if (!token) {
+    setCurrentPage("auth");
+    return;
+  }
+
+  setCurrentPage("checkout");
+};
+
+///merging the guest cart into authenticated part, works as a helper
+const transferGuestCartToCustomer = async () => {
+
+  const token =
+    localStorage.getItem("access_token");
+
+  const customerId =
+    localStorage.getItem("customer_id");
+
+  const savedCart =
+    localStorage.getItem("guest_cart");
+
+  if (!token || !customerId || !savedCart) {
+    return;
+  }
+
+  const items =
+    JSON.parse(savedCart);
+
+  for (const item of items) {
+
+    try {
+
+      await fetch(
+        `http://127.0.0.1:8000/cart/${customerId}/items`,
+        {
+          method: "POST",
+
+          headers: {
+            "Content-Type": "application/json",
+            Authorization: `Bearer ${token}`,
+          },
+
+          body: JSON.stringify({
+            product_id: item.id,
+            quantity: item.quantity,
+          }),
+        }
+      );
+
+    } catch (error) {
+
+      console.error(
+        "Guest cart transfer error:",
+        error
+      );
+
+    }
+  }
+
+  localStorage.removeItem("guest_cart");
+  setGuestCart([]);
 };
 
 //logout
@@ -364,10 +541,7 @@ return (
       
         isOpen={isCartOpen}
         onClose={() => setIsCartOpen(false)}
-        onCheckout={() => {
-          setIsCartOpen(false);
-          setCurrentPage("checkout");
-        }}
+        onCheckout={handleProceedToCheckout}
         onCartUpdate={fetchCartCount}
       />
 

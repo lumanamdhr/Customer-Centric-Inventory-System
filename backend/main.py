@@ -26,9 +26,11 @@ from schemas import (
     CartItemUpdate,
     CheckoutRequest,
     SaleResponse,
+    SaleStatusUpdate,
     CustomerDashboardResponse,
     IntelligenceProductResponse,
-    AdminUserCreate
+    AdminUserCreate,
+    RestockRequest
     )
 from security import (
     hash_password, 
@@ -189,6 +191,41 @@ def update_product(
 
     for field, value in update_data.items():
         setattr(product, field, value)
+
+    db.commit()
+    db.refresh(product)
+
+    return product
+
+#restockupdate
+@app.post("/products/{product_id}/restock", response_model=ProductResponse)
+def restock_product(
+    product_id: int,
+    restock_data: RestockRequest,
+    db: Session = Depends(get_db),
+    current_user: Customer = Depends(get_current_user)
+):
+    if current_user.role not in ["admin", "employee"]:
+        raise HTTPException(
+            status_code=403,
+            detail="Only administrators and employees can restock products."
+        )
+
+    if restock_data.quantity <= 0:
+        raise HTTPException(
+            status_code=400,
+            detail="Restock quantity must be greater than zero."
+        )
+
+    product = db.query(Product).filter(Product.id == product_id).first()
+
+    if product is None:
+        raise HTTPException(
+            status_code=404,
+            detail="Product not found"
+        )
+
+    product.stock_quantity += restock_data.quantity
 
     db.commit()
     db.refresh(product)
@@ -644,7 +681,7 @@ def checkout(
         customer_id=current_user.id,
         total_amount=total_amount,
         payment_method=checkout_data.payment_method,
-        status="completed"
+        status="pending"
     )
 
     db.add(new_sale)
@@ -790,6 +827,42 @@ def get_sales(
     )
 
     return sales
+
+#sales response model
+VALID_SALE_STATUSES = ["pending", "processing", "completed", "cancelled"]
+
+@app.patch("/sales/{sale_id}/status", response_model=SaleResponse)
+def update_sale_status(
+    sale_id: int,
+    status_update: SaleStatusUpdate,
+    db: Session = Depends(get_db),
+    current_user: Customer = Depends(get_current_user)
+):
+    if current_user.role not in ["admin", "employee"]:
+        raise HTTPException(
+            status_code=403,
+            detail="Only administrators and employees can update order status."
+        )
+
+    if status_update.status not in VALID_SALE_STATUSES:
+        raise HTTPException(
+            status_code=400,
+            detail=f"Status must be one of {VALID_SALE_STATUSES}"
+        )
+
+    sale = db.query(Sale).filter(Sale.id == sale_id).first()
+
+    if sale is None:
+        raise HTTPException(
+            status_code=404,
+            detail="Sale not found"
+        )
+
+    sale.status = status_update.status
+    db.commit()
+    db.refresh(sale)
+
+    return sale
 
 @app.get(
     "/customers/dashboard",
@@ -1373,6 +1446,7 @@ def get_dashboard_intelligence(
 
             reorder_recommendations.append(
                 {
+                    "product_id": product.id,
                     "product_name": product.name,
                     "current_stock": product.stock_quantity,
                     "reorder_level": product.reorder_level,
@@ -1769,6 +1843,65 @@ def get_dashboard_intelligence(
             }
         )
 
+        # ABC CLASSIFICATION
+    # Groups products into Class A / B / C based on their share
+    # of total revenue (the Pareto / 80-15-5 rule).
+
+    product_revenue = {product.id: 0 for product in products}
+
+    revenue_rows = (
+        db.query(
+            SaleItem.product_id,
+            func.sum(SaleItem.subtotal).label("revenue")
+        )
+        .join(Sale, Sale.id == SaleItem.sale_id)
+        .filter(Sale.status == "completed")
+        .group_by(SaleItem.product_id)
+        .all()
+    )
+
+    for row in revenue_rows:
+        product_revenue[row.product_id] = float(row.revenue)
+
+    # Highest revenue first
+    sorted_products = sorted(
+        products,
+        key=lambda p: product_revenue[p.id],
+        reverse=True
+    )
+
+    total_product_revenue = sum(product_revenue.values())
+
+    abc_classification = []
+    running_total = 0
+
+    for product in sorted_products:
+
+        revenue = product_revenue[product.id]
+        running_total += revenue
+
+        cumulative_percent = (
+            (running_total / total_product_revenue) * 100
+            if total_product_revenue > 0
+            else 0
+        )
+
+        if cumulative_percent <= 80:
+            abc_class = "A"
+        elif cumulative_percent <= 95:
+            abc_class = "B"
+        else:
+            abc_class = "C"
+
+        abc_classification.append(
+            {
+                "product_id": product.id,
+                "product_name": product.name,
+                "revenue": revenue,
+                "class": abc_class
+            }
+        )
+
     # FINAL RESPONSE
     return {
 
@@ -1828,7 +1961,10 @@ def get_dashboard_intelligence(
             ],
 
             "reorder_recommendations":
-                reorder_recommendations
+                reorder_recommendations,
+
+            "abc_classification":
+                abc_classification
 
         },
 

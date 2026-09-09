@@ -96,7 +96,7 @@ function DashboardSidebar({
   return (
 
     <aside
-      className={`hidden min-h-screen w-64 shrink-0 text-white lg:block ${
+      className={`sticky top-0 h-screen self-start hidden min-h-screen w-64 shrink-0 text-white lg:block ${
         role === "admin"
           ? "bg-slate-800"
           : "bg-slate-700"

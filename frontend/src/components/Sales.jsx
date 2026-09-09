@@ -110,6 +110,43 @@ function Sales() {
 
 
   // =========================================================
+// UPDATE SALE STATUS
+// =========================================================
+
+const updateSaleStatus = async (saleId, newStatus) => {
+
+  try {
+
+    const token = localStorage.getItem("access_token");
+
+    const response = await fetch(
+      `http://127.0.0.1:8000/sales/${saleId}/status`,
+      {
+        method: "PATCH",
+        headers: {
+          Authorization: `Bearer ${token}`,
+          "Content-Type": "application/json",
+        },
+        body: JSON.stringify({ status: newStatus }),
+      }
+    );
+
+    if (!response.ok) {
+      const data = await response.json();
+      alert(data.detail || "Unable to update status.");
+      return;
+    }
+
+    // Refresh the dashboard so the table shows the new status
+    fetchSales();
+
+  } catch (error) {
+    console.error("Status update error:", error);
+    alert("Unable to connect to server.");
+  }
+};
+
+  // =========================================================
   // LOAD SALES DATA WHEN COMPONENT OPENS
   // =========================================================
 
@@ -381,7 +418,174 @@ function Sales() {
         </div>
 
       </div>
+      
+          
+       {/* =====================================================
+          RECENT SALES
+          ===================================================== */}
 
+      <div className="overflow-hidden rounded-2xl border border-slate-200 bg-white shadow-sm">
+
+        <div className="border-b border-slate-200 px-6 py-5">
+
+          <p className="text-xs font-semibold uppercase tracking-[0.18em] text-slate-500">
+            Transactions
+          </p>
+
+          <h2 className="mt-2 text-lg font-semibold text-slate-900">
+            Recent Sales
+          </h2>
+
+          <p className="mt-1 text-sm text-slate-500">
+            Latest recorded customer transactions.
+          </p>
+
+        </div>
+
+
+        {salesData.recent_sales.length === 0 ? (
+
+          <div className="px-6 py-12 text-center">
+
+            <p className="text-sm text-slate-500">
+              No sales found.
+            </p>
+
+          </div>
+
+        ) : (
+
+          <div className="overflow-x-auto">
+
+            <table className="min-w-full text-sm">
+
+              <thead className="bg-slate-50 text-left text-xs uppercase tracking-wide text-slate-500">
+
+                <tr>
+
+                  <th className="px-6 py-4 font-semibold">
+                    Sale ID
+                  </th>
+
+                  <th className="px-6 py-4 font-semibold">
+                    Customer
+                  </th>
+
+                  <th className="px-6 py-4 font-semibold">
+                    Payment
+                  </th>
+
+                  <th className="px-6 py-4 font-semibold">
+                    Status
+                  </th>
+
+                  <th className="px-6 py-4 font-semibold">
+                    Date
+                  </th>
+
+                  <th className="px-6 py-4 text-right font-semibold">
+                    Amount
+                  </th>
+
+                </tr>
+
+              </thead>
+
+
+              <tbody className="divide-y divide-slate-100">
+
+                {salesData.recent_sales.map(
+                  (sale) => (
+
+                    <tr
+                      key={sale.id}
+                      className="transition hover:bg-slate-50"
+                    >
+
+                      <td className="px-6 py-4 font-medium text-slate-900">
+                        #{sale.id}
+                      </td>
+
+
+                      <td className="px-6 py-4 text-slate-600">
+                        {sale.customer_name}
+                      </td>
+
+
+                      <td className="px-6 py-4 capitalize text-slate-600">
+                        {sale.payment_method}
+                      </td>
+
+
+                                            <td className="px-6 py-4">
+
+                        <select
+                          value={sale.status}
+                          onChange={(e) =>
+                            updateSaleStatus(sale.id, e.target.value)
+                          }
+                          className={`rounded-full border-0 px-3 py-1 text-xs font-medium ${
+                            sale.status?.toLowerCase() === "completed"
+                              ? "bg-emerald-50 text-emerald-700"
+                              : sale.status?.toLowerCase() === "cancelled"
+                              ? "bg-red-50 text-red-700"
+                              : "bg-amber-50 text-amber-700"
+                          }`}
+                        >
+                          <option value="pending">pending</option>
+                          <option value="processing">processing</option>
+                          <option value="completed">completed</option>
+                          <option value="cancelled">cancelled</option>
+                        </select>
+
+                      </td>
+                      {/*<td className="px-6 py-4">
+
+                        <span
+                          className={`inline-flex rounded-full px-3 py-1 text-xs font-medium ${
+                            sale.status?.toLowerCase() ===
+                            "completed"
+                              ? "bg-emerald-50 text-emerald-700"
+                              : "bg-amber-50 text-amber-700"
+                          }`}
+                        >
+                          {sale.status}
+                        </span>
+
+                      </td>*/}
+
+
+                      <td className="px-6 py-4 text-slate-500">
+                        {new Date(
+                          sale.created_at
+                        ).toLocaleDateString()}
+                      </td>
+
+
+                      <td className="px-6 py-4 text-right font-semibold text-slate-900">
+
+                        Rs.{" "}
+
+                        {Number(
+                          sale.total_amount
+                        ).toLocaleString()}
+
+                      </td>
+
+                    </tr>
+
+                  )
+                )}
+
+              </tbody>
+
+            </table>
+
+          </div>
+
+        )}
+
+      </div>
 
       {/* =====================================================
           REVENUE TREND
@@ -664,150 +868,7 @@ function Sales() {
       </div>
 
 
-      {/* =====================================================
-          RECENT SALES
-          ===================================================== */}
-
-      <div className="overflow-hidden rounded-2xl border border-slate-200 bg-white shadow-sm">
-
-        <div className="border-b border-slate-200 px-6 py-5">
-
-          <p className="text-xs font-semibold uppercase tracking-[0.18em] text-slate-500">
-            Transactions
-          </p>
-
-          <h2 className="mt-2 text-lg font-semibold text-slate-900">
-            Recent Sales
-          </h2>
-
-          <p className="mt-1 text-sm text-slate-500">
-            Latest recorded customer transactions.
-          </p>
-
-        </div>
-
-
-        {salesData.recent_sales.length === 0 ? (
-
-          <div className="px-6 py-12 text-center">
-
-            <p className="text-sm text-slate-500">
-              No sales found.
-            </p>
-
-          </div>
-
-        ) : (
-
-          <div className="overflow-x-auto">
-
-            <table className="min-w-full text-sm">
-
-              <thead className="bg-slate-50 text-left text-xs uppercase tracking-wide text-slate-500">
-
-                <tr>
-
-                  <th className="px-6 py-4 font-semibold">
-                    Sale ID
-                  </th>
-
-                  <th className="px-6 py-4 font-semibold">
-                    Customer
-                  </th>
-
-                  <th className="px-6 py-4 font-semibold">
-                    Payment
-                  </th>
-
-                  <th className="px-6 py-4 font-semibold">
-                    Status
-                  </th>
-
-                  <th className="px-6 py-4 font-semibold">
-                    Date
-                  </th>
-
-                  <th className="px-6 py-4 text-right font-semibold">
-                    Amount
-                  </th>
-
-                </tr>
-
-              </thead>
-
-
-              <tbody className="divide-y divide-slate-100">
-
-                {salesData.recent_sales.map(
-                  (sale) => (
-
-                    <tr
-                      key={sale.id}
-                      className="transition hover:bg-slate-50"
-                    >
-
-                      <td className="px-6 py-4 font-medium text-slate-900">
-                        #{sale.id}
-                      </td>
-
-
-                      <td className="px-6 py-4 text-slate-600">
-                        {sale.customer_name}
-                      </td>
-
-
-                      <td className="px-6 py-4 capitalize text-slate-600">
-                        {sale.payment_method}
-                      </td>
-
-
-                      <td className="px-6 py-4">
-
-                        <span
-                          className={`inline-flex rounded-full px-3 py-1 text-xs font-medium ${
-                            sale.status?.toLowerCase() ===
-                            "completed"
-                              ? "bg-emerald-50 text-emerald-700"
-                              : "bg-amber-50 text-amber-700"
-                          }`}
-                        >
-                          {sale.status}
-                        </span>
-
-                      </td>
-
-
-                      <td className="px-6 py-4 text-slate-500">
-                        {new Date(
-                          sale.created_at
-                        ).toLocaleDateString()}
-                      </td>
-
-
-                      <td className="px-6 py-4 text-right font-semibold text-slate-900">
-
-                        Rs.{" "}
-
-                        {Number(
-                          sale.total_amount
-                        ).toLocaleString()}
-
-                      </td>
-
-                    </tr>
-
-                  )
-                )}
-
-              </tbody>
-
-            </table>
-
-          </div>
-
-        )}
-
-      </div>
+     
 
     </div>
   );
