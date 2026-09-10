@@ -19,11 +19,14 @@ import {
 } from "lucide-react";
 
 
-function Sales() {
+function Sales( {role} ) {
 
   // =========================================================
   // STATE
   // =========================================================
+
+  const isAdmin = role === "admin";
+  const isEmployee = role === "employee";
 
   // Stores the complete response from /dashboard/sales
   const [salesData, setSalesData] = useState(null);
@@ -215,6 +218,35 @@ const updateSaleStatus = async (saleId, newStatus) => {
     "bg-pink-50 text-pink-600",
   ];
 
+  //payment method
+  const paymentBreakdown = salesData.payment_breakdown || [];
+
+const normalizedPaymentBreakdown = paymentBreakdown.reduce(
+  (result, payment) => {
+    const method =
+      payment.payment_method === "cash_on_delivery"
+        ? "Cash"
+        : payment.payment_method === "cash"
+        ? "Cash"
+        : payment.payment_method;
+
+    const existingPayment = result.find(
+      (item) => item.payment_method === method
+    );
+
+    if (existingPayment) {
+      existingPayment.orders += payment.orders;
+    } else {
+      result.push({
+        ...payment,
+        payment_method: method,
+      });
+    }
+
+    return result;
+  },
+  []
+);
 
   // =========================================================
   // MAIN SALES PAGE
@@ -424,6 +456,7 @@ const updateSaleStatus = async (saleId, newStatus) => {
           RECENT SALES
           ===================================================== */}
 
+      {isEmployee &&(
       <div className="overflow-hidden rounded-2xl border border-slate-200 bg-white shadow-sm">
 
         <div className="border-b border-slate-200 px-6 py-5">
@@ -517,7 +550,7 @@ const updateSaleStatus = async (saleId, newStatus) => {
                       </td>
 
 
-                                            <td className="px-6 py-4">
+                      <td className="px-6 py-4">
 
                         <select
                           value={sale.status}
@@ -586,101 +619,9 @@ const updateSaleStatus = async (saleId, newStatus) => {
         )}
 
       </div>
+      )}
 
-      {/* =====================================================
-          REVENUE TREND
-          ===================================================== */}
-
-      <div className="rounded-2xl border border-slate-200 bg-white p-6 shadow-sm">
-
-        <div className="mb-6">
-
-          <p className="text-xs font-semibold uppercase tracking-[0.18em] text-indigo-500">
-            Performance
-          </p>
-
-          <h2 className="mt-2 text-lg font-semibold text-slate-900">
-            Revenue Trend
-          </h2>
-
-          <p className="mt-1 text-sm text-slate-500">
-            Monthly revenue generated from customer sales.
-          </p>
-
-        </div>
-
-
-        <div className="h-80 w-full">
-
-          {salesData.monthly_revenue.length === 0 ? (
-
-            <div className="flex h-full items-center justify-center">
-
-              <p className="text-sm text-slate-500">
-                No revenue data available.
-              </p>
-
-            </div>
-
-          ) : (
-
-            <ResponsiveContainer
-              width="100%"
-              height="100%"
-            >
-
-              <BarChart
-                data={salesData.monthly_revenue}
-                margin={{
-                  top: 10,
-                  right: 20,
-                  left: 10,
-                  bottom: 10,
-                }}
-              >
-
-                <CartesianGrid
-                  strokeDasharray="3 3"
-                />
-
-                <XAxis
-                  dataKey="month"
-                />
-
-                <YAxis />
-
-                <Tooltip
-                  formatter={(value) => [
-                    `Rs. ${Number(
-                      value
-                    ).toLocaleString()}`,
-                    "Revenue",
-                  ]}
-                />
-
-                {/* Indigo = revenue trend */}
-
-                <Bar
-                  dataKey="revenue"
-                  fill="#4F46E5"
-                  radius={[
-                    6,
-                    6,
-                    0,
-                    0,
-                  ]}
-                />
-
-              </BarChart>
-
-            </ResponsiveContainer>
-
-          )}
-
-        </div>
-
-      </div>
-
+     
 
       {/* =====================================================
           TOP SELLING PRODUCTS
@@ -784,10 +725,110 @@ const updateSaleStatus = async (saleId, newStatus) => {
       </div>
 
 
+       {/* =====================================================
+          REVENUE TREND
+          ===================================================== */}
+
+      {isAdmin && (
+      
+      <div className="rounded-2xl border border-slate-200 bg-white p-6 shadow-sm">
+
+        <div className="mb-6">
+
+          <p className="text-xs font-semibold uppercase tracking-[0.18em] text-indigo-500">
+            Performance
+          </p>
+
+          <h2 className="mt-2 text-lg font-semibold text-slate-900">
+            Revenue Trend
+          </h2>
+
+          <p className="mt-1 text-sm text-slate-500">
+            Monthly revenue generated from customer sales.
+          </p>
+
+        </div>
+
+
+        <div className="h-80 w-full">
+
+          {salesData.monthly_revenue.length === 0 ? (
+
+            <div className="flex h-full items-center justify-center">
+
+              <p className="text-sm text-slate-500">
+                No revenue data available.
+              </p>
+
+            </div>
+
+          ) : (
+
+            <ResponsiveContainer
+              width="100%"
+              height="100%"
+            >
+
+              <BarChart
+                data={salesData.monthly_revenue}
+                margin={{
+                  top: 10,
+                  right: 20,
+                  left: 10,
+                  bottom: 10,
+                }}
+              >
+
+                <CartesianGrid
+                  strokeDasharray="3 3"
+                />
+
+                <XAxis
+                  dataKey="month"
+                />
+
+                <YAxis />
+
+                <Tooltip
+                  formatter={(value) => [
+                    `Rs. ${Number(
+                      value
+                    ).toLocaleString()}`,
+                    "Revenue",
+                  ]}
+                />
+
+                {/* Indigo = revenue trend */}
+
+                <Bar
+                  dataKey="revenue"
+                  fill="#4F46E5"
+                  radius={[
+                    6,
+                    6,
+                    0,
+                    0,
+                  ]}
+                />
+
+              </BarChart>
+
+            </ResponsiveContainer>
+
+          )}
+
+        </div>
+
+      </div>
+      )}
+      
+    
       {/* =====================================================
           PAYMENT METHODS
           ===================================================== */}
 
+      {isEmployee && (
+      
       <div className="rounded-2xl border border-slate-200 bg-white p-6 shadow-sm">
 
         <div className="mb-6">
@@ -817,7 +858,7 @@ const updateSaleStatus = async (saleId, newStatus) => {
 
           ) : (
 
-            salesData.payment_breakdown.map(
+            normalizedPaymentBreakdown.map(
               (payment, index) => (
 
                 <div
@@ -866,9 +907,7 @@ const updateSaleStatus = async (saleId, newStatus) => {
         </div>
 
       </div>
-
-
-     
+      )}
 
     </div>
   );

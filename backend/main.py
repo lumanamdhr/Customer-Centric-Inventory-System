@@ -1,7 +1,7 @@
 from fastapi import FastAPI, Depends, HTTPException, UploadFile, File, Form #depends tell before running API, the other thing is needed first
 from fastapi.middleware.cors import CORSMiddleware
 from fastapi.security import OAuth2PasswordRequestForm
-from sqlalchemy import text, func #execute raw SQL text through sqlalchemy interface
+from sqlalchemy import text, func, case #execute raw SQL text through sqlalchemy interface
 from sqlalchemy.orm import Session
 from fastapi.staticfiles import StaticFiles
 
@@ -999,8 +999,29 @@ def get_sales_dashboard(
 
     # 4. PAYMENT METHOD BREAKDOWN
 
+    payment_method_group = case(
+        (Sale.payment_method.in_(["cash", "cash_on_delivery"]), "Cash"),
+        else_=Sale.payment_method
+        ).label("payment_method")
 
     payment_results = (
+        db.query(
+            payment_method_group,
+            func.count(Sale.id).label("orders")
+        )
+        .group_by(payment_method_group)
+        .all()
+    )
+
+    payment_breakdown = [
+        {
+            "payment_method": payment_method,
+            "orders": orders
+        }
+        for payment_method, orders in payment_results
+    ]
+
+    """payment_results = (
         db.query(
             Sale.payment_method,
             func.count(Sale.id)
@@ -1015,7 +1036,7 @@ def get_sales_dashboard(
             "orders": orders
         }
         for payment_method, orders in payment_results
-    ]
+    ]"""
 
     # 5. TOP SELLING PRODUCTS
     

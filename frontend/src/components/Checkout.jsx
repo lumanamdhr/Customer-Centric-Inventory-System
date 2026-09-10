@@ -273,11 +273,11 @@ function Checkout({ onHomeClick, onOrderComplete }) {
             <button
               type="button"
               onClick={() => {
-                setPaymentMethod("cash_on_delivery");
+                setPaymentMethod("cash");
                 setMessage("");
               }}
               className={`cursor-pointer rounded-2xl border p-5 text-left transition ${
-                paymentMethod === "cash_on_delivery"
+                paymentMethod === "cash"
                   ? "border-pink-500 bg-pink-50 ring-2 ring-pink-100"
                   : "border-slate-200 bg-white hover:border-pink-200"
               }`}
@@ -291,12 +291,12 @@ function Checkout({ onHomeClick, onOrderComplete }) {
 
                 <div
                   className={`flex h-5 w-5 items-center justify-center rounded-full border ${
-                    paymentMethod === "cash_on_delivery"
+                    paymentMethod === "cash"
                       ? "border-pink-500"
                       : "border-slate-300"
                   }`}
                 >
-                  {paymentMethod === "cash_on_delivery" && (
+                  {paymentMethod === "cash" && (
                     <div className="h-2.5 w-2.5 rounded-full bg-pink-500" />
                   )}
                 </div>

@@ -24,8 +24,11 @@ import {
 } from "lucide-react";
 
 
-function Customers() {
+function Customers( {role} ) {
 
+
+  const isAdmin = role === "admin";
+  const isEmployee = role === "employee";
   // =========================================================
   // STATE
   // =========================================================
@@ -391,14 +394,17 @@ function Customers() {
         </div>
 
       </div>
-
+      
+      
 
       {/* =====================================================
           DEMOGRAPHICS
           ===================================================== */}
-
+      {isAdmin && (
+      
       <section>
 
+        
         <div className="mb-5">
 
           <p className="text-xs font-semibold uppercase tracking-[0.2em] text-indigo-600">
@@ -614,9 +620,10 @@ function Customers() {
           </div>
 
         </div>
+        
 
       </section>
-
+      )}
 
       {/* =====================================================
           BUYING BEHAVIOR
@@ -640,7 +647,7 @@ function Customers() {
 
         </div>
 
-
+        
         <div className="grid gap-6 lg:grid-cols-2">
 
 
@@ -761,11 +768,11 @@ function Customers() {
 
       </section>
 
-
+      
       {/* =====================================================
           TOP CUSTOMERS
           ===================================================== */}
-
+      {isEmployee &&  ( 
       <div className="rounded-2xl border border-slate-200 bg-white p-6 shadow-sm">
 
         <div className="mb-6">
@@ -836,11 +843,13 @@ function Customers() {
 
       </div>
 
+      )}
 
       {/* =====================================================
           CUSTOMER ACCOUNTS
           ===================================================== */}
 
+      {isEmployee && (
       <div className="overflow-hidden rounded-2xl border border-slate-200 bg-white shadow-sm">
 
         <div className="border-b border-slate-200 px-6 py-5">
@@ -948,12 +957,12 @@ function Customers() {
         </div>
 
       </div>
-
+      )}
 
       {/* =====================================================
           EMPLOYEE ACCOUNTS
           ===================================================== */}
-
+      {/* 
       <div className="overflow-hidden rounded-2xl border border-slate-200 bg-white shadow-sm">
 
         <div className="border-b border-slate-200 px-6 py-5">
@@ -1045,11 +1054,13 @@ function Customers() {
 
       </div>
 
-
+    */}
       {/* =====================================================
           ADMIN ACCOUNTS
           ===================================================== */}
 
+
+      {/*  
       <div className="overflow-hidden rounded-2xl border border-slate-200 bg-white shadow-sm">
 
         <div className="border-b border-slate-200 px-6 py-5">
@@ -1140,6 +1151,7 @@ function Customers() {
         </div>
 
       </div>
+      */} 
 
     </div>
   );

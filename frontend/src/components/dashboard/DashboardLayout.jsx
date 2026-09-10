@@ -342,7 +342,7 @@ function DashboardLayout({ role }) {
 
           {activeSection === "Sales" && (
 
-            <Sales />
+            <Sales role={role} />
 
           )}
 
@@ -353,7 +353,7 @@ function DashboardLayout({ role }) {
 
           {activeSection === "Customers" && (
 
-            <Customers />
+            <Customers role={role} />
 
           )}
 
