@@ -303,7 +303,7 @@ function Checkout({ onHomeClick, onOrderComplete }) {
 
               </div>
 
-              <p className="mt-5 font-semibold text-slate-900">
+              <p className="mt-5 font-semibold text-slate-c900">
                 Cash on Delivery
               </p>
 
