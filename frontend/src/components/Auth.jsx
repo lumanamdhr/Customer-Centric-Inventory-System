@@ -36,6 +36,9 @@ function Auth({
   const [message, setMessage] = useState("");
   const [messageType, setMessageType] = useState("");
 
+  // Form validation errors
+  const [errors, setErrors] = useState({});
+
   // Loading state
   const [loading, setLoading] = useState(false);
 
@@ -44,11 +47,31 @@ function Auth({
     setMode(newMode);
     setMessage("");
     setMessageType("");
+    setErrors({});
 
     // Reset password visibility
     setShowPassword(false);
     setShowConfirmPassword(false);
   };
+
+  // LOGIN VALIDATION
+const validateLogin = () => {
+  const newErrors = {};
+
+  if (!loginEmail.trim()) { //.trim() removes spaces from the beginning and end.
+    newErrors.email = "Email is required.";
+  } else if (!/\S+@\S+\.\S+/.test(loginEmail)) {
+    newErrors.email = "Please enter a valid email address.";
+  }
+
+  if (!loginPassword) {
+    newErrors.password = "Password is required.";
+  }
+
+  setErrors(newErrors);
+
+  return Object.keys(newErrors).length === 0;
+};
 
   // LOGIN
   const handleLogin = async (event) => {
@@ -56,6 +79,10 @@ function Auth({
 
     setMessage("");
     setMessageType("");
+
+    if (!validateLogin()) {
+    return;
+  }
     setLoading(true);
 
     try {
@@ -138,6 +165,56 @@ function Auth({
     }
   };
 
+  // SIGNUP VALIDATION
+const validateSignup = () => {
+  const newErrors = {};
+
+  if (!firstName.trim()) {
+    newErrors.firstName = "First name is required.";
+  }
+
+  if (!lastName.trim()) {
+    newErrors.lastName = "Last name is required.";
+  }
+
+  if (!dateOfBirth) {
+    newErrors.dateOfBirth = "Date of birth is required.";
+  }
+
+  if (!gender) {
+    newErrors.gender = "Please select your gender.";
+  }
+
+  if (!location.trim()) {
+    newErrors.location = "Location is required.";
+  }
+
+  if (!signupEmail.trim()) {
+    newErrors.signupEmail = "Email is required.";
+  } else if (!/\S+@\S+\.\S+/.test(signupEmail)) {
+    newErrors.signupEmail = "Please enter a valid email address.";
+  }
+
+  if (!signupPassword) {
+    newErrors.signupPassword = "Password is required.";
+  } else if (signupPassword.length < 6) {
+    newErrors.signupPassword =
+      "Password should contain at least 6 characters.";
+  }
+
+  if (!confirmPassword) {
+    newErrors.confirmPassword =
+      "Please confirm your password.";
+  } else if (signupPassword !== confirmPassword) {
+    newErrors.confirmPassword =
+      "Passwords do not match.";
+  }
+
+  setErrors(newErrors);
+
+  return Object.keys(newErrors).length === 0;
+};
+
   // SIGN UP
   const handleSignup = async (event) => {
     event.preventDefault();
@@ -145,7 +222,12 @@ function Auth({
     setMessage("");
     setMessageType("");
 
-    // Check passwords
+     if (!validateSignup()) {
+    return;
+  }
+
+
+    /* Check passwords
     if (signupPassword !== confirmPassword) {
       setMessage("Passwords do not match.");
       setMessageType("error");
@@ -158,7 +240,7 @@ function Auth({
       );
       setMessageType("error");
       return;
-    }
+    }*/
 
     setLoading(true);
 
@@ -371,6 +453,11 @@ function Auth({
                     required
                     className="w-full rounded-xl border border-stone-200 bg-stone-50 px-4 py-3 text-sm text-gray-800 outline-none transition focus:border-rose-300 focus:bg-white"
                   />
+                  {errors.email && (
+                    <p className="mt-1 text-sm text-red-500">
+                      {errors.email}
+                    </p>
+                  )}
 
                 </div>
 
@@ -420,6 +507,12 @@ function Auth({
 
                   </div>
 
+                  {errors.password && (
+                    <p className="mt-1 text-sm text-red-500">
+                      {errors.password}
+                    </p>
+                  )}
+
                 </div>
 
 
@@ -465,6 +558,12 @@ function Auth({
                       required
                       className="w-full rounded-xl border border-stone-200 bg-stone-50 px-4 py-3 text-sm outline-none transition focus:border-rose-300 focus:bg-white"
                     />
+                    {errors.firstName && (
+                      <p className="mt-1 text-sm text-red-500">
+                        {errors.firstName}
+                      </p>
+                    )}
+
 
                   </div>
 
@@ -486,6 +585,11 @@ function Auth({
                       required
                       className="w-full rounded-xl border border-stone-200 bg-stone-50 px-4 py-3 text-sm outline-none transition focus:border-rose-300 focus:bg-white"
                     />
+                    {errors.lastName && (
+                      <p className="mt-1 text-sm text-red-500">
+                        {errors.lastName}
+                      </p>
+                    )}
 
                   </div>
 
@@ -507,6 +611,11 @@ function Auth({
                     required
                     className="w-full rounded-xl border border-stone-200 bg-stone-50 px-4 py-3 text-sm outline-none transition focus:border-rose-300 focus:bg-white"
                   />
+                  {errors.dateOfBirth && (
+                    <p className="mt-1 text-sm text-red-500">
+                      {errors.dateOfBirth}
+                    </p>
+                  )}
                 </div>
                 
                 {/**Gender */}
@@ -532,6 +641,12 @@ function Auth({
                       Prefer not to say
                     </option>
                   </select>
+
+                  {errors.gender && (
+                    <p className="mt-1 text-sm text-red-500">
+                      {errors.gender}
+                    </p>
+                  )}
                 </div>
 
                 {/**Location */}
@@ -551,6 +666,11 @@ function Auth({
                     required
                     className="w-full rounded-xl border border-stone-200 bg-stone-50 px-4 py-3 text-sm outline-none transition focus:border-rose-300 focus:bg-white"
                   />
+                  {errors.location && (
+                    <p className="mt-1 text-sm text-red-500">
+                      {errors.location}
+                    </p>
+                  )}
                 </div>
 
                 {/* Email */}
@@ -572,6 +692,11 @@ function Auth({
                     required
                     className="w-full rounded-xl border border-stone-200 bg-stone-50 px-4 py-3 text-sm outline-none transition focus:border-rose-300 focus:bg-white"
                   />
+                  {errors.signupEmail && (
+                    <p className="mt-1 text-sm text-red-500">
+                      {errors.signupEmail}
+                    </p>
+                  )}
 
                 </div>
 
@@ -619,7 +744,11 @@ function Auth({
                     </button>
 
                   </div>
-
+                  {errors.signupPassword && (
+                    <p className="mt-1 text-sm text-red-500">
+                      {errors.signupPassword}
+                    </p>
+                  )}
                 </div>
 
 
@@ -666,6 +795,11 @@ function Auth({
                     </button>
 
                   </div>
+                  {errors.confirmPassword && (
+                    <p className="mt-1 text-sm text-red-500">
+                      {errors.confirmPassword}
+                    </p>
+                  )}
 
                 </div>
 

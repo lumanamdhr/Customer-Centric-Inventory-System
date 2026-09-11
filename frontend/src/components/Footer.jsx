@@ -211,7 +211,7 @@ function Footer({ onNavigate }) {
         <div className="mt-10 border-t border-white/10 pt-6">
 
           <p className="text-center text-xs text-white/40">
-            © 2026 Lakmé Customer Centric Inventory and Sales Intelligence System
+            © 2026 Lakme Smart Store Platform
           </p>
 
         </div>

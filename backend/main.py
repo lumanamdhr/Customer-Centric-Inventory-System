@@ -70,7 +70,7 @@ Base.metadata.create_all(bind=engine) #scans all the models that inherit from ba
 
 @app.get("/")
 def root():
-    return {"message": "Customer Centric Inventory System API is running!"}
+    return {"message": "Customer Cnetric Inventory System API is running!"}
 
 @app.get("/db-test") #creates another API endpoint that test FastAPI +PostgreSQL
 def database_test():
