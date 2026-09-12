@@ -5,13 +5,14 @@ import {
   EyeOff,
   UserPlus,
   LogIn,
+  KeyRound,
 } from "lucide-react";
 
 function Auth({
   onBack,
   onLoginSuccess,
 }) {
-  // Controls whether we show Login or Sign Up
+  // Controls Login, Signup or Forgot Password
   const [mode, setMode] = useState("login");
 
   // Login fields
@@ -28,6 +29,9 @@ function Auth({
   const [gender, setGender] = useState("");
   const [location, setLocation] = useState("");
 
+  // Forgot password
+  const [forgotEmail, setForgotEmail] = useState("");
+
   // Password visibility
   const [showPassword, setShowPassword] = useState(false);
   const [showConfirmPassword, setShowConfirmPassword] = useState(false);
@@ -36,44 +40,194 @@ function Auth({
   const [message, setMessage] = useState("");
   const [messageType, setMessageType] = useState("");
 
-  // Form validation errors
+  // Validation errors
   const [errors, setErrors] = useState({});
 
   // Loading state
   const [loading, setLoading] = useState(false);
 
-  // Switch Login/Signup
+  // --------------------------------------------------
+  // SWITCH MODE
+  // --------------------------------------------------
+
   const switchMode = (newMode) => {
     setMode(newMode);
     setMessage("");
     setMessageType("");
     setErrors({});
 
-    // Reset password visibility
     setShowPassword(false);
     setShowConfirmPassword(false);
   };
 
+  // --------------------------------------------------
+  // VALIDATION HELPERS
+  // --------------------------------------------------
+
+  // Name should contain letters only.
+  // Spaces, hyphens and apostrophes are allowed.
+  const nameRegex = /^[A-Za-z]+(?:[ '-][A-Za-z]+)*$/;
+
+  // Email validation
+  const emailRegex =
+    /^[A-Za-z0-9._%+-]+@[A-Za-z0-9.-]+\.[A-Za-z]{2,}$/;
+
+  // Location validation
+  // Allows letters, spaces, hyphens and commas.
+  const locationRegex = /^[A-Za-z]+(?:[A-Za-z ,'-]*[A-Za-z])?$/;
+
+  // --------------------------------------------------
   // LOGIN VALIDATION
-const validateLogin = () => {
-  const newErrors = {};
+  // --------------------------------------------------
 
-  if (!loginEmail.trim()) { //.trim() removes spaces from the beginning and end.
-    newErrors.email = "Email is required.";
-  } else if (!/\S+@\S+\.\S+/.test(loginEmail)) {
-    newErrors.email = "Please enter a valid email address.";
-  }
+  const validateLogin = () => {
+    const newErrors = {};
 
-  if (!loginPassword) {
-    newErrors.password = "Password is required.";
-  }
+    const email = loginEmail.trim();
 
-  setErrors(newErrors);
+    if (!email) {
+      newErrors.loginEmail = "Email is required.";
+    } else if (!emailRegex.test(email)) {
+      newErrors.loginEmail =
+        "Please enter a valid email address.";
+    }
 
-  return Object.keys(newErrors).length === 0;
-};
+    if (!loginPassword) {
+      newErrors.loginPassword = "Password is required.";
+    }
 
+    setErrors(newErrors);
+
+    return Object.keys(newErrors).length === 0;
+  };
+
+  // --------------------------------------------------
+  // SIGNUP VALIDATION
+  // --------------------------------------------------
+
+  const validateSignup = () => {
+    const newErrors = {};
+
+    const cleanFirstName = firstName.trim();
+    const cleanLastName = lastName.trim();
+    const cleanEmail = signupEmail.trim();
+    const cleanLocation = location.trim();
+
+    // First Name
+    if (!cleanFirstName) {
+      newErrors.firstName = "First name is required.";
+    } else if (!nameRegex.test(cleanFirstName)) {
+      newErrors.firstName =
+        "First name can contain letters, spaces, hyphens and apostrophes only.";
+    }
+
+    // Last Name
+    if (!cleanLastName) {
+      newErrors.lastName = "Last name is required.";
+    } else if (!nameRegex.test(cleanLastName)) {
+      newErrors.lastName =
+        "Last name can contain letters, spaces, hyphens and apostrophes only.";
+    }
+
+    // Date of Birth
+    if (!dateOfBirth) {
+      newErrors.dateOfBirth =
+        "Date of birth is required.";
+    } else {
+      const selectedDate = new Date(dateOfBirth);
+      const today = new Date();
+
+      // Remove time from today's date
+      today.setHours(0, 0, 0, 0);
+
+      if (selectedDate > today) {
+        newErrors.dateOfBirth =
+          "Date of birth cannot be in the future.";
+      }
+    }
+
+    // Gender
+    if (!gender) {
+      newErrors.gender =
+        "Please select your gender.";
+    }
+
+    // Location
+    if (!cleanLocation) {
+      newErrors.location =
+        "Location is required.";
+    } else if (!locationRegex.test(cleanLocation)) {
+      newErrors.location =
+        "Please enter a valid location.";
+    }
+
+    // Email
+    if (!cleanEmail) {
+      newErrors.signupEmail =
+        "Email is required.";
+    } else if (!emailRegex.test(cleanEmail)) {
+      newErrors.signupEmail =
+        "Please enter a valid email address.";
+    }
+
+    // Password
+    if (!signupPassword) {
+      newErrors.signupPassword =
+        "Password is required.";
+    } else if (signupPassword.length < 8) {
+      newErrors.signupPassword =
+        "Password must contain at least 8 characters.";
+    } else if (!/[A-Z]/.test(signupPassword)) {
+      newErrors.signupPassword =
+        "Password must contain at least one uppercase letter.";
+    } else if (!/[a-z]/.test(signupPassword)) {
+      newErrors.signupPassword =
+        "Password must contain at least one lowercase letter.";
+    } else if (!/[0-9]/.test(signupPassword)) {
+      newErrors.signupPassword =
+        "Password must contain at least one number.";
+    }
+
+    // Confirm Password
+    if (!confirmPassword) {
+      newErrors.confirmPassword =
+        "Please confirm your password.";
+    } else if (signupPassword !== confirmPassword) {
+      newErrors.confirmPassword =
+        "Passwords do not match.";
+    }
+
+    setErrors(newErrors);
+
+    return Object.keys(newErrors).length === 0;
+  };
+
+  // --------------------------------------------------
+  // FORGOT PASSWORD VALIDATION
+  // --------------------------------------------------
+
+  const validateForgotPassword = () => {
+    const newErrors = {};
+
+    const email = forgotEmail.trim();
+
+    if (!email) {
+      newErrors.forgotEmail =
+        "Email is required.";
+    } else if (!emailRegex.test(email)) {
+      newErrors.forgotEmail =
+        "Please enter a valid email address.";
+    }
+
+    setErrors(newErrors);
+
+    return Object.keys(newErrors).length === 0;
+  };
+
+  // --------------------------------------------------
   // LOGIN
+  // --------------------------------------------------
+
   const handleLogin = async (event) => {
     event.preventDefault();
 
@@ -81,16 +235,24 @@ const validateLogin = () => {
     setMessageType("");
 
     if (!validateLogin()) {
-    return;
-  }
+      return;
+    }
+
     setLoading(true);
 
     try {
       // OAuth2 expects form data
       const formData = new URLSearchParams();
 
-      formData.append("username", loginEmail);
-      formData.append("password", loginPassword);
+      formData.append(
+        "username",
+        loginEmail.trim()
+      );
+
+      formData.append(
+        "password",
+        loginPassword
+      );
 
       const response = await fetch(
         "http://127.0.0.1:8000/login",
@@ -165,89 +327,26 @@ const validateLogin = () => {
     }
   };
 
-  // SIGNUP VALIDATION
-const validateSignup = () => {
-  const newErrors = {};
-
-  if (!firstName.trim()) {
-    newErrors.firstName = "First name is required.";
-  }
-
-  if (!lastName.trim()) {
-    newErrors.lastName = "Last name is required.";
-  }
-
-  if (!dateOfBirth) {
-    newErrors.dateOfBirth = "Date of birth is required.";
-  }
-
-  if (!gender) {
-    newErrors.gender = "Please select your gender.";
-  }
-
-  if (!location.trim()) {
-    newErrors.location = "Location is required.";
-  }
-
-  if (!signupEmail.trim()) {
-    newErrors.signupEmail = "Email is required.";
-  } else if (!/\S+@\S+\.\S+/.test(signupEmail)) {
-    newErrors.signupEmail = "Please enter a valid email address.";
-  }
-
-  if (!signupPassword) {
-    newErrors.signupPassword = "Password is required.";
-  } else if (signupPassword.length < 6) {
-    newErrors.signupPassword =
-      "Password should contain at least 6 characters.";
-  }
-
-  if (!confirmPassword) {
-    newErrors.confirmPassword =
-      "Please confirm your password.";
-  } else if (signupPassword !== confirmPassword) {
-    newErrors.confirmPassword =
-      "Passwords do not match.";
-  }
-
-  setErrors(newErrors);
-
-  return Object.keys(newErrors).length === 0;
-};
-
+  // --------------------------------------------------
   // SIGN UP
+  // --------------------------------------------------
+
   const handleSignup = async (event) => {
     event.preventDefault();
 
     setMessage("");
     setMessageType("");
 
-     if (!validateSignup()) {
-    return;
-  }
-
-
-    /* Check passwords
-    if (signupPassword !== confirmPassword) {
-      setMessage("Passwords do not match.");
-      setMessageType("error");
+    if (!validateSignup()) {
       return;
     }
-
-    if (signupPassword.length < 6) {
-      setMessage(
-        "Password should contain at least 6 characters."
-      );
-      setMessageType("error");
-      return;
-    }*/
 
     setLoading(true);
 
     try {
       // Combine first and last name
       const fullName =
-        `${firstName} ${lastName}`.trim();
+        `${firstName.trim()} ${lastName.trim()}`.trim();
 
       const response = await fetch(
         "http://127.0.0.1:8000/customers",
@@ -255,16 +354,17 @@ const validateSignup = () => {
           method: "POST",
 
           headers: {
-            "Content-Type": "application/json",
+            "Content-Type":
+              "application/json",
           },
 
           body: JSON.stringify({
             name: fullName,
-            email: signupEmail,
+            email: signupEmail.trim(),
             password: signupPassword,
             date_of_birth: dateOfBirth,
             gender: gender,
-            location: location,
+            location: location.trim(),
           }),
         }
       );
@@ -285,14 +385,18 @@ const validateSignup = () => {
       setMessage(
         "Account created successfully. Please log in."
       );
+
       setMessageType("success");
 
-      // Move to login after successful signup
-      setLoginEmail(signupEmail);
+      // Move email to login
+      setLoginEmail(
+        signupEmail.trim()
+      );
 
       setTimeout(() => {
         setMode("login");
         setMessage("");
+        setErrors({});
       }, 1200);
 
     } catch (error) {
@@ -308,6 +412,79 @@ const validateSignup = () => {
       setLoading(false);
     }
   };
+
+  // --------------------------------------------------
+  // FORGOT PASSWORD
+  // --------------------------------------------------
+
+  const handleForgotPassword = async (event) => {
+    event.preventDefault();
+
+    setMessage("");
+    setMessageType("");
+
+    if (!validateForgotPassword()) {
+      return;
+    }
+
+    setLoading(true);
+
+    try {
+      const response = await fetch(
+        "http://127.0.0.1:8000/forgot-password",
+        {
+          method: "POST",
+
+          headers: {
+            "Content-Type":
+              "application/json",
+          },
+
+          body: JSON.stringify({
+            email: forgotEmail.trim(),
+          }),
+        }
+      );
+
+      const data = await response.json();
+
+      if (!response.ok) {
+        const errorMessage =
+          typeof data.detail === "string"
+            ? data.detail
+            : "Unable to process your request.";
+
+        setMessage(errorMessage);
+        setMessageType("error");
+        return;
+      }
+
+      setMessage(
+        "If an account with this email exists, a password reset link has been sent."
+      );
+
+      setMessageType("success");
+
+    } catch (error) {
+      console.error(
+        "Forgot password error:",
+        error
+      );
+
+      setMessage(
+        "Unable to connect to the server."
+      );
+
+      setMessageType("error");
+
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  // --------------------------------------------------
+  // UI
+  // --------------------------------------------------
 
   return (
     <main className="min-h-screen bg-gradient-to-br from-rose-50 via-white to-amber-50 px-6 py-10">
@@ -350,7 +527,6 @@ const validateSignup = () => {
             </div>
           </div>
 
-
           {/* Right form section */}
           <div className="px-7 py-10 sm:px-12 sm:py-14">
 
@@ -367,51 +543,63 @@ const validateSignup = () => {
             <div className="mt-6 text-center">
 
               <h2 className="mt-3 text-3xl font-semibold text-rose-500">
+
                 {mode === "login"
                   ? "Welcome"
-                  : "Create Your Account"}
+                  : mode === "signup"
+                  ? "Create Your Account"
+                  : "Forgot Password"}
+
               </h2>
 
               <p className="mt-3 text-sm leading-6 text-gray-600">
+
                 {mode === "login"
                   ? "Log in to continue your beauty journey."
-                  : "Create your account and discover more from Lakmé."}
+                  : mode === "signup"
+                  ? "Create your account and discover more from Lakmé."
+                  : "Enter your registered email address to reset your password."}
+
               </p>
 
             </div>
 
+            {/* Login / Signup switch */}
+            {mode !== "forgot" && (
+              <div className="mx-auto mt-8 flex max-w-sm rounded-full bg-stone-100 p-1">
 
-            {/* Mode switch */}
-            <div className="mx-auto mt-8 flex max-w-sm rounded-full bg-stone-100 p-1">
+                <button
+                  type="button"
+                  onClick={() =>
+                    switchMode("login")
+                  }
+                  className={`flex flex-1 cursor-pointer items-center justify-center gap-2 rounded-full py-2.5 text-sm font-medium transition ${
+                    mode === "login"
+                      ? "bg-white text-gray-900 shadow-sm"
+                      : "text-gray-500"
+                  }`}
+                >
+                  <LogIn size={16} />
+                  Login
+                </button>
 
-              <button
-                type="button"
-                onClick={() => switchMode("login")}
-                className={`flex flex-1 cursor-pointer items-center justify-center gap-2 rounded-full py-2.5 text-sm font-medium transition ${
-                  mode === "login"
-                    ? "bg-white text-gray-900 shadow-sm"
-                    : "text-gray-500"
-                }`}
-              >
-                <LogIn size={16} />
-                Login
-              </button>
+                <button
+                  type="button"
+                  onClick={() =>
+                    switchMode("signup")
+                  }
+                  className={`flex flex-1 cursor-pointer items-center justify-center gap-2 rounded-full py-2.5 text-sm font-medium transition ${
+                    mode === "signup"
+                      ? "bg-white text-gray-900 shadow-sm"
+                      : "text-gray-500"
+                  }`}
+                >
+                  <UserPlus size={16} />
+                  Sign Up
+                </button>
 
-              <button
-                type="button"
-                onClick={() => switchMode("signup")}
-                className={`flex flex-1 cursor-pointer items-center justify-center gap-2 rounded-full py-2.5 text-sm font-medium transition ${
-                  mode === "signup"
-                    ? "bg-white text-gray-900 shadow-sm"
-                    : "text-gray-500"
-                }`}
-              >
-                <UserPlus size={16} />
-                Sign Up
-              </button>
-
-            </div>
-
+              </div>
+            )}
 
             {/* Messages */}
             {message && (
@@ -426,8 +614,10 @@ const validateSignup = () => {
               </div>
             )}
 
-
+            {/* ================================================= */}
             {/* LOGIN FORM */}
+            {/* ================================================= */}
+
             {mode === "login" && (
               <form
                 onSubmit={handleLogin}
@@ -442,7 +632,7 @@ const validateSignup = () => {
                   </label>
 
                   <input
-                    type="email"
+                    type="text"
                     name="email"
                     value={loginEmail}
                     onChange={(event) =>
@@ -450,17 +640,20 @@ const validateSignup = () => {
                     }
                     autoComplete="email"
                     placeholder="Enter your email"
-                    required
-                    className="w-full rounded-xl border border-stone-200 bg-stone-50 px-4 py-3 text-sm text-gray-800 outline-none transition focus:border-rose-300 focus:bg-white"
+                    className={`w-full rounded-xl border ${
+                      errors.loginEmail
+                        ? "border-red-400"
+                        : "border-stone-200"
+                    } bg-stone-50 px-4 py-3 text-sm text-gray-800 outline-none transition focus:border-rose-300 focus:bg-white`}
                   />
-                  {errors.email && (
+
+                  {errors.loginEmail && (
                     <p className="mt-1 text-sm text-red-500">
-                      {errors.email}
+                      {errors.loginEmail}
                     </p>
                   )}
 
                 </div>
-
 
                 {/* Password */}
                 <div>
@@ -484,8 +677,11 @@ const validateSignup = () => {
                       }
                       autoComplete="current-password"
                       placeholder="Enter your password"
-                      required
-                      className="w-full rounded-xl border border-stone-200 bg-stone-50 px-4 py-3 pr-12 text-sm text-gray-800 outline-none transition focus:border-rose-300 focus:bg-white"
+                      className={`w-full rounded-xl border ${
+                        errors.loginPassword
+                          ? "border-red-400"
+                          : "border-stone-200"
+                      } bg-stone-50 px-4 py-3 pr-12 text-sm text-gray-800 outline-none transition focus:border-rose-300 focus:bg-white`}
                     />
 
                     <button
@@ -507,15 +703,30 @@ const validateSignup = () => {
 
                   </div>
 
-                  {errors.password && (
+                  {errors.loginPassword && (
                     <p className="mt-1 text-sm text-red-500">
-                      {errors.password}
+                      {errors.loginPassword}
                     </p>
                   )}
 
                 </div>
 
+                {/* Forgot password */}
+                <div className="text-right">
 
+                  <button
+                    type="button"
+                    onClick={() =>
+                      switchMode("forgot")
+                    }
+                    className="cursor-pointer text-sm font-medium text-rose-600 hover:text-rose-700 hover:underline"
+                  >
+                    Forgot Password?
+                  </button>
+
+                </div>
+
+                {/* Login button */}
                 <button
                   type="submit"
                   disabled={loading}
@@ -529,8 +740,10 @@ const validateSignup = () => {
               </form>
             )}
 
-
+            {/* ================================================= */}
             {/* SIGNUP FORM */}
+            {/* ================================================= */}
+
             {mode === "signup" && (
               <form
                 onSubmit={handleSignup}
@@ -540,6 +753,7 @@ const validateSignup = () => {
                 {/* First + Last Name */}
                 <div className="grid gap-4 sm:grid-cols-2">
 
+                  {/* First Name */}
                   <div>
 
                     <label className="mb-2 block text-sm font-medium text-gray-700">
@@ -555,18 +769,22 @@ const validateSignup = () => {
                       }
                       autoComplete="given-name"
                       placeholder="First name"
-                      required
-                      className="w-full rounded-xl border border-stone-200 bg-stone-50 px-4 py-3 text-sm outline-none transition focus:border-rose-300 focus:bg-white"
+                      className={`w-full rounded-xl border ${
+                        errors.firstName
+                          ? "border-red-400"
+                          : "border-stone-200"
+                      } bg-stone-50 px-4 py-3 text-sm outline-none transition focus:border-rose-300 focus:bg-white`}
                     />
+
                     {errors.firstName && (
                       <p className="mt-1 text-sm text-red-500">
                         {errors.firstName}
                       </p>
                     )}
 
-
                   </div>
 
+                  {/* Last Name */}
                   <div>
 
                     <label className="mb-2 block text-sm font-medium text-gray-700">
@@ -582,9 +800,13 @@ const validateSignup = () => {
                       }
                       autoComplete="family-name"
                       placeholder="Last name"
-                      required
-                      className="w-full rounded-xl border border-stone-200 bg-stone-50 px-4 py-3 text-sm outline-none transition focus:border-rose-300 focus:bg-white"
+                      className={`w-full rounded-xl border ${
+                        errors.lastName
+                          ? "border-red-400"
+                          : "border-stone-200"
+                      } bg-stone-50 px-4 py-3 text-sm outline-none transition focus:border-rose-300 focus:bg-white`}
                     />
+
                     {errors.lastName && (
                       <p className="mt-1 text-sm text-red-500">
                         {errors.lastName}
@@ -595,8 +817,9 @@ const validateSignup = () => {
 
                 </div>
 
-                {/**Date of Birth */}
+                {/* Date of Birth */}
                 <div>
+
                   <label className="mb-2 block text-sm font-medium text-gray-700">
                     Date of Birth
                   </label>
@@ -608,18 +831,24 @@ const validateSignup = () => {
                     onChange={(event) =>
                       setDateOfBirth(event.target.value)
                     }
-                    required
-                    className="w-full rounded-xl border border-stone-200 bg-stone-50 px-4 py-3 text-sm outline-none transition focus:border-rose-300 focus:bg-white"
+                    className={`w-full rounded-xl border ${
+                      errors.dateOfBirth
+                        ? "border-red-400"
+                        : "border-stone-200"
+                    } bg-stone-50 px-4 py-3 text-sm outline-none transition focus:border-rose-300 focus:bg-white`}
                   />
+
                   {errors.dateOfBirth && (
                     <p className="mt-1 text-sm text-red-500">
                       {errors.dateOfBirth}
                     </p>
                   )}
+
                 </div>
-                
-                {/**Gender */}
+
+                {/* Gender */}
                 <div>
+
                   <label className="mb-2 block text-sm font-medium text-gray-700">
                     Gender
                   </label>
@@ -630,16 +859,32 @@ const validateSignup = () => {
                     onChange={(event) =>
                       setGender(event.target.value)
                     }
-                    required
-                    className="w-full rounded-xl border border-stone-200 bg-stone-50 px-4 py-3 text-sm outline-none transition focus:border-rose-300 focus:bg-white"
+                    className={`w-full rounded-xl border ${
+                      errors.gender
+                        ? "border-red-400"
+                        : "border-stone-200"
+                    } bg-stone-50 px-4 py-3 text-sm outline-none transition focus:border-rose-300 focus:bg-white`}
                   >
-                    <option value="">Select gender</option>
-                    <option value="Female">Female</option>
-                    <option value="Male">Male</option>
-                    <option value="Other">Other</option>
+                    <option value="">
+                      Select gender
+                    </option>
+
+                    <option value="Female">
+                      Female
+                    </option>
+
+                    <option value="Male">
+                      Male
+                    </option>
+
+                    <option value="Other">
+                      Other
+                    </option>
+
                     <option value="Prefer not to say">
                       Prefer not to say
                     </option>
+
                   </select>
 
                   {errors.gender && (
@@ -647,10 +892,12 @@ const validateSignup = () => {
                       {errors.gender}
                     </p>
                   )}
+
                 </div>
 
-                {/**Location */}
+                {/* Location */}
                 <div>
+
                   <label className="mb-2 block text-sm font-medium text-gray-700">
                     Location
                   </label>
@@ -663,14 +910,19 @@ const validateSignup = () => {
                       setLocation(event.target.value)
                     }
                     placeholder="Enter your city"
-                    required
-                    className="w-full rounded-xl border border-stone-200 bg-stone-50 px-4 py-3 text-sm outline-none transition focus:border-rose-300 focus:bg-white"
+                    className={`w-full rounded-xl border ${
+                      errors.location
+                        ? "border-red-400"
+                        : "border-stone-200"
+                    } bg-stone-50 px-4 py-3 text-sm outline-none transition focus:border-rose-300 focus:bg-white`}
                   />
+
                   {errors.location && (
                     <p className="mt-1 text-sm text-red-500">
                       {errors.location}
                     </p>
                   )}
+
                 </div>
 
                 {/* Email */}
@@ -681,7 +933,7 @@ const validateSignup = () => {
                   </label>
 
                   <input
-                    type="email"
+                    type="text"
                     name="email"
                     value={signupEmail}
                     onChange={(event) =>
@@ -689,9 +941,13 @@ const validateSignup = () => {
                     }
                     autoComplete="email"
                     placeholder="Enter your email"
-                    required
-                    className="w-full rounded-xl border border-stone-200 bg-stone-50 px-4 py-3 text-sm outline-none transition focus:border-rose-300 focus:bg-white"
+                    className={`w-full rounded-xl border ${
+                      errors.signupEmail
+                        ? "border-red-400"
+                        : "border-stone-200"
+                    } bg-stone-50 px-4 py-3 text-sm outline-none transition focus:border-rose-300 focus:bg-white`}
                   />
+
                   {errors.signupEmail && (
                     <p className="mt-1 text-sm text-red-500">
                       {errors.signupEmail}
@@ -699,7 +955,6 @@ const validateSignup = () => {
                   )}
 
                 </div>
-
 
                 {/* Password */}
                 <div>
@@ -723,8 +978,11 @@ const validateSignup = () => {
                       }
                       autoComplete="new-password"
                       placeholder="Create a password"
-                      required
-                      className="w-full rounded-xl border border-stone-200 bg-stone-50 px-4 py-3 pr-12 text-sm outline-none transition focus:border-rose-300 focus:bg-white"
+                      className={`w-full rounded-xl border ${
+                        errors.signupPassword
+                          ? "border-red-400"
+                          : "border-stone-200"
+                      } bg-stone-50 px-4 py-3 pr-12 text-sm outline-none transition focus:border-rose-300 focus:bg-white`}
                     />
 
                     <button
@@ -735,6 +993,7 @@ const validateSignup = () => {
                         )
                       }
                       className="absolute right-3 top-1/2 -translate-y-1/2 cursor-pointer p-2 text-gray-400 hover:text-rose-600"
+                      aria-label="Toggle password visibility"
                     >
                       {showPassword ? (
                         <EyeOff size={18} />
@@ -744,13 +1003,19 @@ const validateSignup = () => {
                     </button>
 
                   </div>
+
                   {errors.signupPassword && (
                     <p className="mt-1 text-sm text-red-500">
                       {errors.signupPassword}
                     </p>
                   )}
-                </div>
 
+                  <p className="mt-1 text-xs text-gray-500">
+                    Use at least 8 characters with uppercase,
+                    lowercase and a number.
+                  </p>
+
+                </div>
 
                 {/* Confirm Password */}
                 <div>
@@ -774,8 +1039,11 @@ const validateSignup = () => {
                       }
                       autoComplete="new-password"
                       placeholder="Confirm your password"
-                      required
-                      className="w-full rounded-xl border border-stone-200 bg-stone-50 px-4 py-3 pr-12 text-sm outline-none transition focus:border-rose-300 focus:bg-white"
+                      className={`w-full rounded-xl border ${
+                        errors.confirmPassword
+                          ? "border-red-400"
+                          : "border-stone-200"
+                      } bg-stone-50 px-4 py-3 pr-12 text-sm outline-none transition focus:border-rose-300 focus:bg-white`}
                     />
 
                     <button
@@ -786,6 +1054,7 @@ const validateSignup = () => {
                         )
                       }
                       className="absolute right-3 top-1/2 -translate-y-1/2 cursor-pointer p-2 text-gray-400 hover:text-rose-600"
+                      aria-label="Toggle password visibility"
                     >
                       {showConfirmPassword ? (
                         <EyeOff size={18} />
@@ -795,6 +1064,7 @@ const validateSignup = () => {
                     </button>
 
                   </div>
+
                   {errors.confirmPassword && (
                     <p className="mt-1 text-sm text-red-500">
                       {errors.confirmPassword}
@@ -803,7 +1073,7 @@ const validateSignup = () => {
 
                 </div>
 
-
+                {/* Create account */}
                 <button
                   type="submit"
                   disabled={loading}
@@ -817,10 +1087,82 @@ const validateSignup = () => {
               </form>
             )}
 
+            {/* ================================================= */}
+            {/* FORGOT PASSWORD FORM */}
+            {/* ================================================= */}
+
+            {mode === "forgot" && (
+              <form
+                onSubmit={handleForgotPassword}
+                className="mx-auto mt-8 max-w-sm space-y-5"
+              >
+
+                <div className="flex justify-center">
+
+                  <div className="flex h-14 w-14 items-center justify-center rounded-full bg-rose-50 text-rose-600">
+                    <KeyRound size={25} />
+                  </div>
+
+                </div>
+
+                <div>
+
+                  <label className="mb-2 block text-sm font-medium text-gray-700">
+                    Email
+                  </label>
+
+                  <input
+                    type="text"
+                    name="forgotEmail"
+                    value={forgotEmail}
+                    onChange={(event) =>
+                      setForgotEmail(event.target.value)
+                    }
+                    autoComplete="email"
+                    placeholder="Enter your registered email"
+                    className={`w-full rounded-xl border ${
+                      errors.forgotEmail
+                        ? "border-red-400"
+                        : "border-stone-200"
+                    } bg-stone-50 px-4 py-3 text-sm text-gray-800 outline-none transition focus:border-rose-300 focus:bg-white`}
+                  />
+
+                  {errors.forgotEmail && (
+                    <p className="mt-1 text-sm text-red-500">
+                      {errors.forgotEmail}
+                    </p>
+                  )}
+
+                </div>
+
+                <button
+                  type="submit"
+                  disabled={loading}
+                  className="w-full cursor-pointer rounded-full bg-gray-900 py-3.5 text-sm font-semibold text-white transition hover:bg-rose-600 disabled:cursor-not-allowed disabled:bg-gray-300"
+                >
+                  {loading
+                    ? "Sending..."
+                    : "Send Reset Link"}
+                </button>
+
+                <button
+                  type="button"
+                  onClick={() =>
+                    switchMode("login")
+                  }
+                  className="w-full cursor-pointer text-sm font-medium text-gray-500 hover:text-rose-600"
+                >
+                  ← Back to Login
+                </button>
+
+              </form>
+            )}
+
           </div>
         </div>
 
       </div>
+
     </main>
   );
 }

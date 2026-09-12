@@ -9,7 +9,9 @@ import os
 import uuid
 from pathlib import Path
 
-from datetime import date
+from pydantic import BaseModel
+from jose import jwt
+from datetime import date, timedelta
 
 from database import engine, get_db ,Base #import engine and base we created in db.py
 from models import Product,Customer, Cart, CartItem, Sale, SaleItem
@@ -30,14 +32,18 @@ from schemas import (
     CustomerDashboardResponse,
     IntelligenceProductResponse,
     AdminUserCreate,
-    RestockRequest
+    RestockRequest,
+    ForgotPasswordRequest,
+    ResetPasswordRequest,
     )
 from security import (
     hash_password, 
     verify_password, 
     create_access_token,
     get_current_user,
-    require_role
+    require_role,
+    SECRET_KEY,
+    ALGORITHM
 )
 
 def calculate_age(date_of_birth: date) -> int:
@@ -557,6 +563,130 @@ def login(
         "name": existing_customer.name,
         "email": existing_customer.email,
         "role": existing_customer.role
+    }
+@app.post("/forgot-password")
+def forgot_password(
+    request: ForgotPasswordRequest,
+    db: Session = Depends(get_db)
+):
+    customer = (
+        db.query(Customer)
+        .filter(Customer.email == request.email.strip())
+        .first()
+    )
+
+    # Do not reveal whether an email exists
+    if customer is None:
+        return {
+            "message": "If an account with this email exists, a password reset link has been generated."
+        }
+
+    # Create a short-lived reset token
+    reset_token = create_access_token(
+        data={
+            "sub": str(customer.id),
+            "purpose": "password_reset"
+        },
+        expires_delta=timedelta(minutes=15)
+    )
+
+    # Development link
+    reset_link = (
+        f"http://localhost:5173/reset-password?token={reset_token}"
+    )
+
+    return {
+        "message": "Password reset link generated successfully.",
+        "reset_link": reset_link
+    }
+
+@app.post("/reset-password")
+def reset_password(
+    request: ResetPasswordRequest,
+    db: Session = Depends(get_db)
+):
+    try:
+        payload = jwt.decode(
+            request.token,
+            SECRET_KEY,
+            algorithms=[ALGORITHM]
+        )
+
+        # Make sure this token was created specifically
+        # for password resetting
+        if payload.get("purpose") != "password_reset":
+            raise HTTPException(
+                status_code=400,
+                detail="Invalid password reset token."
+            )
+
+        customer_id = payload.get("sub")
+
+        if customer_id is None:
+            raise HTTPException(
+                status_code=400,
+                detail="Invalid password reset token."
+            )
+
+    except jwt.ExpiredSignatureError:
+        raise HTTPException(
+            status_code=400,
+            detail="Password reset link has expired."
+        )
+
+    except jwt.JWTError:
+        raise HTTPException(
+            status_code=400,
+            detail="Invalid password reset token."
+        )
+
+    customer = (
+        db.query(Customer)
+        .filter(Customer.id == int(customer_id))
+        .first()
+    )
+
+    if customer is None:
+        raise HTTPException(
+            status_code=404,
+            detail="Customer account not found."
+        )
+
+    # Validate new password
+    if len(request.new_password) < 8:
+        raise HTTPException(
+            status_code=400,
+            detail="Password must contain at least 8 characters."
+        )
+
+    if not any(char.isupper() for char in request.new_password):
+        raise HTTPException(
+            status_code=400,
+            detail="Password must contain at least one uppercase letter."
+        )
+
+    if not any(char.islower() for char in request.new_password):
+        raise HTTPException(
+            status_code=400,
+            detail="Password must contain at least one lowercase letter."
+        )
+
+    if not any(char.isdigit() for char in request.new_password):
+        raise HTTPException(
+            status_code=400,
+            detail="Password must contain at least one number."
+        )
+
+    # Hash the new password
+    customer.password = hash_password(
+        request.new_password
+    )
+
+    db.commit()
+    db.refresh(customer)
+
+    return {
+        "message": "Password reset successfully. You can now log in with your new password."
     }
 
 @app.get("/auth-test")

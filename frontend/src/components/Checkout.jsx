@@ -349,7 +349,7 @@ function Checkout({ onHomeClick, onOrderComplete }) {
           >
             {loading
               ? "Processing..."
-              : paymentMethod === "cash_on_delivery"
+              : paymentMethod === "cash"
               ? "Place Order"
               : paymentMethod
               ? `Continue with ${

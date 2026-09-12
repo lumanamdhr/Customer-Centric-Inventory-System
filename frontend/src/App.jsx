@@ -20,8 +20,10 @@ import BenefitsSection from "./components/BenefitSection";
 import CommunitySection from "./components/CommunitySection";
 import Shop from "./components/Shop";
 import Auth from "./components/Auth";
+import ResetPassword from "./components/ResetPassword";
 
 function App() {
+
   
   // Keeps track of which page the user is viewing
   const [currentPage, setCurrentPage] = useState("home"); //useState() is a React Hook that must be called inside component function
@@ -55,6 +57,22 @@ useEffect(() => {
   const [isLoggedIn, setIsLoggedIn] = useState(
   !!localStorage.getItem("access_token") //!!token=ture if !!null=false
 );
+
+ if (window.location.pathname === "/reset-password") {
+  return (
+    <ResetPassword
+      onBackToLogin={() => {
+        window.history.pushState(
+          {},
+          "",
+          "/"
+        );
+
+        window.location.reload();
+      }}
+    />
+  );
+}
   // Stores whatever the customer types into the search bar
   const [searchTerm, setSearchTerm] = useState("");
 
@@ -108,6 +126,14 @@ useEffect(() => {
     setCartCount((previousCount) =>
       previousCount + quantity
     );
+
+     setToastMessage(
+      "Product added to cart"
+    );
+
+    setTimeout(() => {
+      setToastMessage("");
+    }, 2500);
 
     return;
   }
@@ -392,6 +418,8 @@ return (
         onLogout={handleLogout}
         searchTerm={searchTerm}
         onSearchChange={setSearchTerm}
+        currentPage={currentPage}
+
       />
       )}
 

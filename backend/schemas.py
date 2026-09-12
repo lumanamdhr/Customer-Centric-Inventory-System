@@ -129,3 +129,12 @@ class AdminUserCreate(BaseModel):
 #restock order
 class RestockRequest(BaseModel):
     quantity: int
+
+#forgot password
+class ForgotPasswordRequest(BaseModel):
+    email: str
+
+
+class ResetPasswordRequest(BaseModel):
+    token: str
+    new_password: str

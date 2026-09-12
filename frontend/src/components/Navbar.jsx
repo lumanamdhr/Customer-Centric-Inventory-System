@@ -16,6 +16,7 @@ function Navbar({ //props that works when clicked
   onLogout,
   searchTerm,
   onSearchChange,
+  currentPage
 }) {
   return (
     <header className="sticky top-0 z-50 bg-white/95 shadow-sm backdrop-blur-md">
@@ -112,43 +113,78 @@ function Navbar({ //props that works when clicked
 
           <button
             onClick={onHomeClick}
-            className="group relative cursor-pointer text-[13px] font-medium uppercase tracking-[0.16em] text-gray-700 transition-colors duration-300 hover:text-rose-700"
+            className={`group relative cursor-pointer text-[13px] font-medium uppercase tracking-[0.16em] text-gray-700 transition-colors duration-300 hover:text-rose-700 ${
+            currentPage === "home"
+              ? "text-rose-700"
+              : "text-gray-700 hover:text-rose-700"
+          }`}
           >
             Home
 
-            <span className="absolute -bottom-1 left-0 h-[2px] w-0 bg-rose-700 transition-all duration-300 group-hover:w-full" />
-          </button>
+            <span className={`absolute -bottom-1 left-0 h-[2px] bg-rose-700 transition-all duration-300 ${
+              currentPage === "home" ? "w-full" : "w-0 group-hover:w-full"
+            }`}
+            />
+            </button>
 
           <button
             onClick={() => onNavigate("shop")}
-            className="group relative cursor-pointer text-[13px] font-medium uppercase tracking-[0.16em] text-gray-700 transition-colors duration-300 hover:text-rose-700"
-          >
+            className={`group relative cursor-pointer text-[13px] font-medium uppercase tracking-[0.16em] transition-colors duration-300 ${
+              currentPage === "shop"
+                ? "text-rose-700"
+                : "text-gray-700 hover:text-rose-700"
+            }`}
+          >        
             Shop
-            <span className="absolute -bottom-1 left-0 h-[2px] w-0 bg-rose-700 transition-all duration-300 group-hover:w-full" />
-          </button>
+            <span className={`absolute -bottom-1 left-0 h-[2px] bg-rose-700 transition-all duration-300 ${
+                currentPage === "shop" ? "w-full" : "w-0 group-hover:w-full"
+              }`}
+            />         
+            </button>
 
           <button
             onClick={() => onNavigate("categories")}
-            className="group relative cursor-pointer text-[13px] font-medium uppercase tracking-[0.16em] text-gray-700 transition-colors duration-300 hover:text-rose-700"
-          >
+            className={`group relative cursor-pointer text-[13px] font-medium uppercase tracking-[0.16em] transition-colors duration-300 ${
+              currentPage === "categories"
+                ? "text-rose-700"
+                : "text-gray-700 hover:text-rose-700"
+            }`}
+          >        
             Categories
-            <span className="absolute -bottom-1 left-0 h-[2px] w-0 bg-rose-700 transition-all duration-300 group-hover:w-full" />
-          </button>
+            <span className={`absolute -bottom-1 left-0 h-[2px] bg-rose-700 transition-all duration-300 ${
+                currentPage === "categories" ? "w-full" : "w-0 group-hover:w-full"
+              }`}
+            />         
+            </button>
 
           <button
             onClick={() => onNavigate("features")}
-            className="group relative cursor-pointer text-[13px] font-medium uppercase tracking-[0.16em] text-gray-700 transition-colors duration-300 hover:text-rose-700"
-          >
+            className={`group relative cursor-pointer text-[13px] font-medium uppercase tracking-[0.16em] transition-colors duration-300 ${
+              currentPage === "features"
+                ? "text-rose-700"
+                : "text-gray-700 hover:text-rose-700"
+            }`}
+          >                 
             Features
-            <span className="absolute -bottom-1 left-0 h-[2px] w-0 bg-rose-700 transition-all duration-300 group-hover:w-full" />
+            <span className={`absolute -bottom-1 left-0 h-[2px] bg-rose-700 transition-all duration-300 ${
+                currentPage === "features" ? "w-full" : "w-0 group-hover:w-full"
+              }`}
+            />         
           </button>
 
           <button
             onClick={() => onNavigate("about")}
-            className="group relative cursor-pointer text-[13px] font-medium uppercase tracking-[0.16em] text-gray-700 transition-colors duration-300 hover:text-rose-700"
-          >
+            className={`group relative cursor-pointer text-[13px] font-medium uppercase tracking-[0.16em] transition-colors duration-300 ${
+              currentPage === "about"
+                ? "text-rose-700"
+                : "text-gray-700 hover:text-rose-700"
+            }`}
+          >             
             About
-            <span className="absolute -bottom-1 left-0 h-[2px] w-0 bg-rose-700 transition-all duration-300 group-hover:w-full" />
+            <span className={`absolute -bottom-1 left-0 h-[2px] bg-rose-700 transition-all duration-300 ${
+                currentPage === "about" ? "w-full" : "w-0 group-hover:w-full"
+              }`}
+            />         
           </button>
 
         </nav>
