@@ -99,13 +99,14 @@ function Footer({ onNavigate }) {
                 Features
               </button>
 
-              <button
+             {/**   <button
                 onClick={() => onNavigate("about")}
                 className="block cursor-pointer text-sm text-white/60 transition hover:text-white"
               >
                 About
               </button>
-
+              */}
+              
             </div>
 
           </div>

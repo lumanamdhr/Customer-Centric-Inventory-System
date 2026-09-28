@@ -7,7 +7,10 @@ import {
   Heart,
 } from "lucide-react";
 
-function Features() {
+function Features({ embedded = false }) {
+  const Wrapper = embedded ? "section" : "main";
+  const Heading = embedded ? "h2" : "h1";
+
 
   const features = [
     {
@@ -55,7 +58,7 @@ function Features() {
   ];
 
   return (
-    <main className="min-h-screen bg-gradient-to-br from-pink-50 via-white to-rose-50 px-6 py-16">
+    <Wrapper className={`${embedded ? "" : "min-h-screen "}bg-gradient-to-br from-pink-50 via-white to-rose-50 px-6 py-16`}>
 
       <div className="mx-auto max-w-6xl">
 
@@ -66,9 +69,9 @@ function Features() {
             Our Features
           </p>
 
-          <h1 className="mt-5 text-4xl font-semibold tracking-tight text-slate-900 sm:text-5xl">
+          <Heading className="mt-5 text-4xl font-semibold tracking-tight text-slate-900 sm:text-5xl">
             A simpler way to explore beauty.
-          </h1>
+          </Heading>
 
           <p className="mt-5 text-sm leading-7 text-slate-600 sm:text-base">
             Everything is designed to make discovering, choosing,
@@ -114,7 +117,7 @@ function Features() {
 
       </div>
 
-    </main>
+    </Wrapper>
   );
 }
 

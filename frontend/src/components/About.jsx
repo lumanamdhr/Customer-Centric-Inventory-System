@@ -5,9 +5,12 @@ import {
   Lightbulb,
 } from "lucide-react";
 
-function About() {
+function About({ embedded = false }) {
+  const Wrapper = embedded ? "section" : "main";
+  const Heading = embedded ? "h2" : "h1";
+
   return (
-    <main className="min-h-screen bg-white">
+    <Wrapper className={`${embedded ? "" : "min-h-screen "}bg-white`}>
 
       {/* Hero */}
       <section className="bg-gradient-to-br from-pink-50 via-rose-50 to-white px-6 py-20">
@@ -18,9 +21,9 @@ function About() {
             About Us
           </p>
 
-          <h1 className="mt-5 text-4xl font-semibold tracking-tight text-slate-900 sm:text-5xl">
+          <Heading className="mt-5 text-4xl font-semibold tracking-tight text-slate-900 sm:text-5xl">
             Beauty designed for every expression.
-          </h1>
+          </Heading>
 
           <p className="mx-auto mt-6 max-w-2xl text-base leading-7 text-slate-600">
             Our platform brings together beauty, personal care,
@@ -124,7 +127,7 @@ function About() {
 
       </section>
 
-    </main>
+    </Wrapper>
   );
 }
 

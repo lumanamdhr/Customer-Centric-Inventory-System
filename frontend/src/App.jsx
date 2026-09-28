@@ -78,7 +78,12 @@ useEffect(() => {
 
   const [selectedProduct, setSelectedProduct] = useState(null);
 
-  const [selectedCategory, setSelectedCategory] = useState("All");
+  // What the Shop page should show (set by navbar links, categories, etc.)
+  const [shopView, setShopView] = useState({
+    category: "All",
+    subcategory: null,
+    saleOnly: false,
+  });
 
   // Controls whether the cart drawer is visible
   const [isCartOpen, setIsCartOpen] = useState(false);
@@ -384,7 +389,45 @@ const handleLogout = () => {
 };
 
 //central navigation funxtion
+// Opens the Shop page with the given filter
+// e.g. openShop() = everything, openShop({ saleOnly: true }), openShop({ category: "Lips" })
+const openShop = ({
+  category = "All",
+  subcategory = null,
+  saleOnly = false,
+} = {}) => {
+  setShopView({ category, subcategory, saleOnly });
+  setCurrentPage("shop");
+  window.scrollTo({ top: 0 });
+};
+
+// Features / About / Categories now live on the homepage,
+// so those links take the customer home and scroll to the section
+const scrollToHomeSection = (sectionId) => {
+  setCurrentPage("home");
+
+  setTimeout(() => {
+    document
+      .getElementById(sectionId)
+      ?.scrollIntoView({ behavior: "smooth" });
+  }, 100);
+};
+
 const handleNavigate = (page) => {
+  if (page === "shop") {
+    openShop();
+    return;
+  }
+
+  if (
+    page === "features" ||
+    page === "about" ||
+    page === "categories"
+  ) {
+    scrollToHomeSection(page);
+    return;
+  }
+
   setCurrentPage(page);
 };
 
@@ -394,8 +437,7 @@ const handleViewDetails = (product) => {
 };
 
 const handleSearch = () => {
-  setSelectedCategory("All");
-  setCurrentPage("shop");
+  openShop();
 };
 
 const handleClearSearch = () => {
@@ -411,7 +453,7 @@ return (
         onAuthClick={() => setCurrentPage("auth")}
         onCartClick={() => setIsCartOpen(true)}
         onHomeClick={() => setCurrentPage("home")}
-        onNavigate={handleNavigate}
+        onOpenShop={openShop}
         onSearch={handleSearch}
         cartCount={cartCount}
         isLoggedIn={isLoggedIn}
@@ -419,7 +461,7 @@ return (
         searchTerm={searchTerm}
         onSearchChange={setSearchTerm}
         currentPage={currentPage}
-
+        shopView={shopView}
       />
       )}
 
@@ -428,12 +470,11 @@ return (
         <>
           <Hero />
 
-          <CategorySection
-            onCategoryClick={(category) => {
-              setSelectedCategory(category);
-              setCurrentPage("shop");
-            }}
-          />
+          <div id="categories" className="scroll-mt-32">
+            <CategorySection
+              onCategoryClick={(category) => openShop({ category })}
+            />
+          </div>
 
              <OfferSection
             onCreateAccount={() => setCurrentPage("auth")}
@@ -445,14 +486,20 @@ return (
               onViewMore={() => handleNavigate("shop")}
           />
 
+          {/* Features (moved here from the navbar) */}
+          <div id="features" className="scroll-mt-32">
+            <Features embedded />
+          </div>
+
+          {/* About Us (moved here from the navbar) */}
+         {/**  <div id="about" className="scroll-mt-32">
+            <About embedded />
+          </div>
+              */}
           {/* Why Shop With Us */}
           <BenefitsSection />
           
           <CommunitySection />
-
-          {/*<Features />
-
-          <About />*/}
 
           <Footer 
             onNavigate={handleNavigate}
@@ -482,9 +529,13 @@ return (
         <Shop
           onAddToCart={handleAddToCart}
           onViewDetails={handleViewDetails}
-          initialCategory={selectedCategory}
+          key={JSON.stringify(shopView)} //fresh filters whenever a navbar link changes the view
+          initialCategory={shopView.category}
+          initialSubcategory={shopView.subcategory}
+          saleOnly={shopView.saleOnly}
           searchTerm={searchTerm}
           onClearSearch={handleClearSearch}
+          onBrowseAll={() => openShop()}
         />
 
         <Footer

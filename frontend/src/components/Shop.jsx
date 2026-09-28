@@ -6,8 +6,11 @@ function Shop({
   onAddToCart,
   onViewDetails,
   initialCategory = "All",
+  initialSubcategory = null, // e.g. { label: "Lipstick", keywords: ["lipstick"] }
+  saleOnly = false,          // true when opened from the "On Sale" link
   searchTerm = "",
   onClearSearch,
+  onBrowseAll,
 }) {
   const [products, setProducts] = useState([]);
   const [loading, setLoading] = useState(true);
@@ -18,6 +21,9 @@ function Shop({
 
   // Category filter
   const [selectedCategory, setSelectedCategory] = useState(initialCategory);
+
+  // Sub-category picked from the navbar dropdown (Lipstick, Lip Balm, ...)
+  const [activeSub, setActiveSub] = useState(initialSubcategory);
 
   // Price filter
   const [minPrice, setMinPrice] = useState(100);
@@ -58,6 +64,11 @@ function Shop({
     return ["All", ...uniqueCategories];
   }, [products]);
 
+  // A product counts as "on sale" when the API marks it that way.
+  // (Supports either an on_sale flag or a discount_percent value.)
+  const isOnSale = (product) =>
+    product.on_sale === true || Number(product.discount_percent) > 0;
+
   // Filter products
   const filteredProducts = useMemo(() => { //useMemo lets React reuse the calculated result until one of thr values it depends on chnages
     const searchText = searchTerm.toLowerCase().trim();
@@ -72,6 +83,14 @@ function Shop({
         selectedCategory === "All" ||
         product.category === selectedCategory;
 
+      const matchesSub =
+        !activeSub ||
+        activeSub.keywords.some((word) =>
+          product.name.toLowerCase().includes(word)
+        );
+
+      const matchesSale = !saleOnly || isOnSale(product);
+
       const matchesPrice =
         product.price >= minPrice &&
         product.price <= maxPrice;
@@ -79,6 +98,8 @@ function Shop({
       return (
         matchesSearch &&
         matchesCategory &&
+        matchesSub &&
+        matchesSale &&
         matchesPrice
       );
     });
@@ -86,12 +107,15 @@ function Shop({
     products,
     searchTerm,
     selectedCategory,
+    activeSub,
+    saleOnly,
     minPrice,
     maxPrice,
   ]);
 
   const clearFilters = () => {
   setSelectedCategory("All");
+  setActiveSub(null);
   setMinPrice(100);
   setMaxPrice(800);
   onClearSearch();
@@ -107,16 +131,21 @@ function Shop({
         <div className="mx-auto max-w-7xl text-center">
 
           <p className="text-xs font-semibold uppercase tracking-[0.3em] text-rose-600">
-            Explore Lakmé
+            {saleOnly ? "Special Offers" : "Explore Lakmé"}
           </p>
 
           <h1 className="mt-3 text-4xl font-semibold tracking-tight text-gray-900 sm:text-5xl">
-            Shop Beauty Essentials
+            {saleOnly
+              ? "On Sale"
+              : activeSub
+              ? activeSub.label
+              : "Shop Beauty Essentials"}
           </h1>
 
           <p className="mx-auto mt-4 max-w-2xl text-sm leading-7 text-gray-600 sm:text-base">
-            Discover makeup and skincare products and find the
-            right essentials for your beauty routine.
+            {saleOnly
+              ? "Grab your favourite Lakmé essentials at a special price."
+              : "Discover makeup and skincare products and find the right essentials for your beauty routine."}
           </p>
 
         </div>
@@ -196,9 +225,10 @@ function Shop({
                   {categories.map((category) => (
                     <button
                       key={category}
-                      onClick={() =>
-                        setSelectedCategory(category)
-                      }
+                      onClick={() => {
+                        setSelectedCategory(category);
+                        setActiveSub(null);
+                      }}
                       className={`block w-full cursor-pointer rounded-xl px-4 py-2.5 text-left text-sm transition ${
                         selectedCategory === category
                           ? "bg-rose-100 font-semibold text-rose-700"
@@ -301,11 +331,20 @@ function Shop({
                       {filteredProducts.length}
                     </span>{" "}
                     products
+                    {activeSub && (
+                      <>
+                        {" "}in{" "}
+                        <span className="font-semibold text-rose-600">
+                          {activeSub.label}
+                        </span>
+                      </>
+                    )}
                   </p>
                 </div>
 
                 {/* Selected filter */}
                 {(searchTerm ||
+                  activeSub ||
                   selectedCategory !== "All" ||
                   minPrice !== 100 ||
                   maxPrice !== 800) && (
@@ -344,18 +383,22 @@ function Shop({
                   <div className="rounded-3xl border border-stone-200 bg-white py-20 text-center">
 
                     <h2 className="text-lg font-semibold text-gray-900">
-                      No products found
+                      {saleOnly
+                        ? "No items on sale right now"
+                        : "No products found"}
                     </h2>
 
                     <p className="mt-2 text-sm text-gray-500">
-                      Try adjusting your search, category or price range.
+                      {saleOnly
+                        ? "Please check back soon for new offers."
+                        : "Try adjusting your search, category or price range."}
                     </p>
 
                     <button
-                      onClick={clearFilters}
+                      onClick={saleOnly ? onBrowseAll : clearFilters}
                       className="mt-6 cursor-pointer rounded-full bg-gray-900 px-6 py-3 text-sm font-semibold text-white transition hover:bg-rose-600"
                     >
-                      Clear Filters
+                      {saleOnly ? "Browse All Products" : "Clear Filters"}
                     </button>
 
                   </div>
