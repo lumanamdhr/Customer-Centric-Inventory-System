@@ -13,6 +13,7 @@ from pydantic import BaseModel
 from jose import jwt
 from datetime import date, timedelta
 
+from recommender import get_recommendations
 from database import engine, get_db ,Base #import engine and base we created in db.py
 from models import Product,Customer, Cart, CartItem, Sale, SaleItem
 from schemas import (
@@ -265,6 +266,11 @@ def delete_product(
     return {
         "message": "Product deleted successfully"
     }
+
+
+@app.get("/products/{product_id}/recommendations", response_model=list[ProductResponse])
+def recommend_products(product_id: int, db: Session = Depends(get_db)):
+    return get_recommendations(db, product_id)
 
 #cart
 @app.get("/cart/{customer_id}", response_model=CartResponse)

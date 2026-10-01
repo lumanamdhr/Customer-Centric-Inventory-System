@@ -520,6 +520,7 @@ return (
           product={selectedProduct}
           onBack={() => setCurrentPage("shop")}
           onAddToCart={handleAddToCart}
+          onViewDetails={handleViewDetails}
         />
       )}
 

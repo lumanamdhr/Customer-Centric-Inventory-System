@@ -1,16 +1,41 @@
 import { ArrowLeft, ShoppingBag, Plus, Minus } from "lucide-react";
-import { useState } from "react";
+import { useState, useEffect } from "react";
+import ProductCard from "./ProductCard";
 
 function ProductDetails({
   product,
   onBack,
   onAddToCart,
+  onViewDetails,
 }) {
   const [quantity, setQuantity] = useState(1);
 
   if (!product) {
     return null;
   }
+
+  const [recommendations, setRecommendations] = useState([]);
+
+    useEffect(() => {
+      if (!product) return;
+
+      const fetchRecommendations = async () => {
+        try {
+          const response = await fetch(
+            `http://127.0.0.1:8000/products/${product.id}/recommendations`
+          );
+          const data = await response.json();
+
+          if (response.ok) {
+            setRecommendations(data);
+          }
+        } catch (error) {
+          console.error("Recommendation loading error:", error);
+        }
+      };
+
+      fetchRecommendations();
+    }, [product]);
 
   const increaseQuantity = () => {
     if (quantity < product.stock_quantity) {
@@ -25,14 +50,14 @@ function ProductDetails({
   };
 
   return (
-    <section className="min-h-screen bg-stone-50 px-6 py-12 lg:px-10">
+    <section className="min-h-screen bg-stone-50 px-6 py-4 lg:px-10">
 
       <div className="mx-auto max-w-6xl">
 
         {/* Back button */}
         <button
           onClick={onBack}
-          className="mb-8 inline-flex cursor-pointer items-center gap-2 text-sm font-medium text-gray-600 transition hover:text-rose-600"
+          className="mb-4 inline-flex cursor-pointer items-center gap-2 text-sm font-medium text-gray-600 transition hover:text-rose-600"
         >
           <ArrowLeft size={17} />
           Back to products
@@ -41,18 +66,18 @@ function ProductDetails({
         <div className="grid overflow-hidden rounded-3xl bg-white shadow-sm lg:grid-cols-2">
 
           {/* Image */}
-          <div className="flex min-h-[450px] items-center justify-center bg-stone-50 p-10">
+          <div className="flex min-h-[300px] items-center justify-center bg-stone-50 p-6">
 
             <img
               src={`http://127.0.0.1:8000${product.image}`}
               alt={product.name}
-              className="max-h-[480px] w-full object-contain"
+              className="max-h-[320px] w-full object-contain"
             />
 
           </div>
 
           {/* Details */}
-          <div className="flex flex-col justify-center p-8 sm:p-12">
+          <div className="flex flex-col justify-center p-6 sm:p-7">
 
             <p className="text-xs font-semibold uppercase tracking-[0.3em] text-rose-500">
               {product.category}
@@ -142,6 +167,25 @@ function ProductDetails({
           </div>
 
         </div>
+      
+        {recommendations.length > 0 && (
+          <div className="mt-6">
+            <h2 className="text-2xl font-semibold text-gray-900">
+              You might also like
+            </h2>
+
+            <div className="mt-6 grid grid-cols-2 gap-6 sm:grid-cols-3 lg:grid-cols-4">
+              {recommendations.map((item) => (
+                <ProductCard
+                  key={item.id}
+                  product={item}
+                  onAddToCart={onAddToCart}
+                  onViewDetails={onViewDetails}
+                />
+              ))}
+            </div>
+          </div>
+        )}  
       </div>
 
     </section>

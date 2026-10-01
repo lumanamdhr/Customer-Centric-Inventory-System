@@ -103,7 +103,7 @@ function Navbar({ //props that works when clicked
           {/* Logo */}
           <button
             onClick={onHomeClick}
-            className="shrink-0 cursor-pointer text-2xl font-semibold tracking-[0.28em] text-gray-900 transition duration-300 hover:text-rose-600 sm:text-3xl"
+            className=" shrink-0 cursor-pointer text-2xl font-semibold tracking-[0.28em] text-gray-900 transition duration-300 hover:text-rose-600 sm:text-3xl"
           >
             LAKMÉ
           </button>
