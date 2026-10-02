@@ -138,3 +138,18 @@ class ForgotPasswordRequest(BaseModel):
 class ResetPasswordRequest(BaseModel):
     token: str
     new_password: str
+
+#chatbot
+
+#chatrequest describes what the frontend sends us (just the typed message)
+#chatrequest to validate incoming data automatically
+class ChatRequest(BaseModel):
+    message: str
+
+#chatresponse decribes what we send back (the reply text plus any matching products)
+class ChatResponse(BaseModel):
+    reply: str
+    products: list[ProductResponse]
+
+    class Config:
+        from_attributes = True

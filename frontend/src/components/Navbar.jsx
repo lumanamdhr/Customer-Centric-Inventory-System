@@ -1,4 +1,4 @@
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import {
   Search,
   User,
@@ -75,6 +75,26 @@ function Navbar({ //props that works when clicked
   // Which category dropdown is currently open (null = none)
   const [openMenu, setOpenMenu] = useState(null);
 
+  const [showNavbar, setShowNavbar] = useState(true);
+const [lastScrollY, setLastScrollY] = useState(0);
+
+useEffect(() => {
+  const handleScroll = () => {
+    const currentScrollY = window.scrollY; //scroll Y built in for how mnay pixels down the page currently is
+
+    if (currentScrollY > lastScrollY && currentScrollY > 100) {
+      setShowNavbar(false); // scrolling down, and far enough to bother hiding
+    } else {
+      setShowNavbar(true); // scrolling up, or still near the top
+    }
+
+    setLastScrollY(currentScrollY);
+  };
+
+  window.addEventListener("scroll", handleScroll); //runs everytine the user scrolls
+  return () => window.removeEventListener("scroll", handleScroll);
+}, [lastScrollY]);
+
   const onShopPage = currentPage === "shop";
   const isAllShop =
     onShopPage &&
@@ -91,8 +111,11 @@ function Navbar({ //props that works when clicked
     }`;
 
   return (
-    <header className="sticky top-0 z-50 bg-white/95 shadow-sm backdrop-blur-md">
-
+    <header
+      className={`sticky top-0 z-50 bg-white/95 shadow-sm backdrop-blur-md transition-transform duration-300 ${
+        showNavbar ? "translate-y-0" : "-translate-y-full"
+      }`}
+    >
       {/* =====================================================
           TOP NAVIGATION
           Logo | Our Shop | On Sale | Search | Account | Cart
@@ -103,9 +126,20 @@ function Navbar({ //props that works when clicked
           {/* Logo */}
           <button
             onClick={onHomeClick}
-            className=" shrink-0 cursor-pointer text-2xl font-semibold tracking-[0.28em] text-gray-900 transition duration-300 hover:text-rose-600 sm:text-3xl"
+            className="group shrink-0 cursor-pointer transition duration-300"
+            aria-label="Lakmé home"
           >
-            LAKMÉ
+            <svg viewBox="0 0 220 60" className="h-auto w-36 sm:w-44">
+              <text
+                x="20" y="36"
+                fontSize="24" fontStyle="italic" fontWeight="500" letterSpacing="3"
+                className="fill-gray-900 transition duration-300 group-hover:fill-rose-600"
+                fontFamily="Georgia, serif"
+              >
+                LAKMÉ
+              </text>
+              <path d="M20 42 Q 93 52 168 42" fill="none" stroke="#e11d48" strokeWidth="1.5" />
+            </svg>
           </button>
 
           {/* Our Shop */}

@@ -21,6 +21,7 @@ import CommunitySection from "./components/CommunitySection";
 import Shop from "./components/Shop";
 import Auth from "./components/Auth";
 import ResetPassword from "./components/ResetPassword";
+import ChatWidget from "./components/ChatWidget";
 
 function App() {
 
@@ -434,6 +435,7 @@ const handleNavigate = (page) => {
 const handleViewDetails = (product) => {
   setSelectedProduct(product);
   setCurrentPage("product-details");
+  window.scrollTo({ top: 0 });
 };
 
 const handleSearch = () => {
@@ -596,8 +598,8 @@ return (
       )}
 
      {toastMessage && (
-      <div className="fixed right-6 top-6 z-[200] animate-[slideIn_0.25s_ease-out]">
-        <div className="flex items-center gap-3 rounded-2xl border border-pink-200 bg-white px-5 py-4 shadow-xl">
+      <div className="fixed bottom-6 left-6 z-[200] animate-[slideIn_0.25s_ease-out]">
+        <div className="flex items-center gap-3 rounded-2xl border-2 border-rose-300 bg-white px-5 py-4 shadow-2xl">
 
           <div className="flex h-9 w-9 items-center justify-center rounded-full bg-pink-100 text-pink-600">
             <Check size={18} />
@@ -608,7 +610,7 @@ return (
               Added to cart
             </p>
 
-            <p className="mt-0.5 text-xs text-slate-500">
+            <p className="mt-0.5 text-xs text-slate-600">
               Product added to your cart successfully.
             </p>
           </div>
@@ -624,6 +626,8 @@ return (
         onCheckout={handleProceedToCheckout}
         onCartUpdate={fetchCartCount}
       />
+
+      <ChatWidget onViewDetails={handleViewDetails} />
 
       {/* Login sliding panel 
       <Login

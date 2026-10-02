@@ -13,6 +13,7 @@ from pydantic import BaseModel
 from jose import jwt
 from datetime import date, timedelta
 
+from chatbot import get_response
 from recommender import get_recommendations
 from database import engine, get_db ,Base #import engine and base we created in db.py
 from models import Product,Customer, Cart, CartItem, Sale, SaleItem
@@ -36,6 +37,8 @@ from schemas import (
     RestockRequest,
     ForgotPasswordRequest,
     ResetPasswordRequest,
+    ChatRequest,
+    ChatResponse,
     )
 from security import (
     hash_password, 
@@ -87,6 +90,7 @@ def database_test():
             "database": "connected",
             "result": result.scalar() #gets actual value ie 1
         }
+
 
 @app.post("/products", response_model=ProductResponse)
 async def create_product(
@@ -271,6 +275,11 @@ def delete_product(
 @app.get("/products/{product_id}/recommendations", response_model=list[ProductResponse])
 def recommend_products(product_id: int, db: Session = Depends(get_db)):
     return get_recommendations(db, product_id)
+
+@app.post("/chatbot", response_model=ChatResponse)
+def chat_endpoint(request: ChatRequest, db: Session = Depends(get_db)):
+    return get_response(db, request.message)
+
 
 #cart
 @app.get("/cart/{customer_id}", response_model=CartResponse)
